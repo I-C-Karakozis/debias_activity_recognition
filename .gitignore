@@ -1,0 +1,8 @@
+.DS_Store
+
+venv
+*.pyc
+
+model_output
+resized_256
+baseline_models
