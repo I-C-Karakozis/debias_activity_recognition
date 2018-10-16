@@ -33,8 +33,8 @@ def parse_json(args):
     #     print(output[k])
 
 # Sample execution: 
-# python preprocess_test.py human_verbs.txt data/test.json data/genders_test.json 
-# python preprocess_test.py human_verbs.txt data/dev.json data/genders_dev.json
+# python preprocess_test.py data/human_verbs.txt data/test.json data/genders_test.json 
+# python preprocess_test.py data/human_verbs.txt data/dev.json data/genders_dev.json
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Fetch all actions with man or woman agents.")
   parser.add_argument("human_verbs_txt", help="Txt file to get verbs of humans in action.")

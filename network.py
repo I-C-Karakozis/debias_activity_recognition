@@ -67,3 +67,6 @@ class resnet_modified_small(nn.Module):
         features = self.dropout(self.relu(self.linear(x.view(-1, 7*7*self.base_size()))))
         return self.cls(features)
 
+    def loss(self):
+        return torch.nn.CrossEntropyLoss()
+        

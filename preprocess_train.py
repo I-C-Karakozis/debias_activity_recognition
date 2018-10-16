@@ -64,7 +64,7 @@ def parse_json(args):
     # for k in output:
     #     print(output[k])
 
-# Sample execution: python preprocess_train.py data/train.json data/genders_train.json human_verbs.txt
+# Sample execution: python preprocess_train.py data/train.json data/genders_train.json data/human_verbs.txt
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Fetch all actions with man or woman agents.") 
   parser.add_argument("data_json", help="Input dataset json to preprocess.") 
