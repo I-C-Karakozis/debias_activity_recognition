@@ -1,18 +1,19 @@
 # install pip
 curl https://bootstrap.pypa.io/get-pip.py -o ~/Downloads/get-pip.py
-python ~/Downloads/get-pip.py --user
+python ~/Downloads/get-pip.py
 
 # setup virtualenv
-export PATH=$PATH:~/Library/Python/2.7/bin
-pip install virtualenv --user
+export PATH=$PATH:/Users/ick/Library/Python/2.7/bin
+pip install virtualenv
 virtualenv venv 
 source venv/bin/activate
 
 # install dependencies
-pip install -r requirements.txt --user
+pip install -r requirements.txt
 
 # download data
 ./install.sh
+rm resized.tar
 
 #setup directories
 mkdir model_output

@@ -1,5 +1,7 @@
 import argparse
+import copy
 import json
+# import matplotlib.pyplot as plt
 import time
 
 import torch
@@ -8,90 +10,122 @@ from torch import optim
 from imsitu import *
 import network
 
-# TODO: bring back cuda
+# TODO: plot option
+# TODO: bring back cuda; use_gpu
 device_array = []
 
-def train_model(max_epoch, eval_frequency, train_loader, dev_loader, model, encoding, optimizer, save_dir, timing = False): 
-    model.train()
+TRAIN = "train"
+VAL = "val"
+PHASES = [TRAIN, VAL]
 
+def train_model(max_epoch, batch_size, eval_frequency, dataloaders, model, optimizer, save_dir, timing=True): 
     time_all = time.time()
 
-    pmodel = torch.nn.DataParallel(model, device_ids=device_array)
-    top1 = imSituTensorEvaluation(1, 1, encoding)
-    top5 = imSituTensorEvaluation(5, 1, encoding)
-    loss_total = 0 
-    print_freq = 10
-    total_steps = 0
-    avg_scores = []
+    # pmodel = torch.nn.DataParallel(model, device_ids=device_array)
+    print_freq = 1
+    epoch_steps = 0
+
+    # plot statistics
+    train_acc = []
+    train_loss = []
+    val_acc = []
+    val_loss = []
+    epochs =[]
+
+    # best model info
+    best_acc = 0.0
+    best_model = copy.deepcopy(model.state_dict())
   
-    for k in range(0,max_epoch):  
-      for i, (index, input, target) in enumerate(train_loader):
-        total_steps += 1
-   
-        t0 = time.time()
-        t1 = time.time() 
-      
-        input_var = torch.autograd.Variable(input)
-        target_var = torch.autograd.Variable(target)
-        # input_var = torch.autograd.Variable(input.cuda())
-        # target_var = torch.autograd.Variable(target.cuda())
-        print(pmodel(input_var).size())
-        (_,v,vrn,norm,scores,predictions)  = pmodel(input_var)
-        (s_sorted, idx) = torch.sort(scores, 1, True)
-        
-        # time forward pass
-        if timing : print "forward time = {}".format(time.time() - t1)
-        optimizer.zero_grad()
+    for epoch in range(0, max_epoch):  
+        print('Epoch {}/{}'.format(epoch, max_epoch - 1))
+        print('-' * 10)
 
-        # print loss
-        t1 = time.time()
-        loss = model.mil_loss(v, vrn, norm, target, 3)
-        if timing: print "loss time = {}".format(time.time() - t1)
-        
-        # time backpropagation
-        t1 = time.time()
-        loss.backward()        
-        if timing: print "backward time = {}".format(time.time() - t1)
-        optimizer.step()
-        loss_total += loss.data[0]
-        return
-        
-        # score situation
-        t2 = time.time() 
-        top1.add_point(target, predictions.data, idx.data)
-        top5.add_point(target, predictions.data, idx.data)
-     
-        if timing: print "eval time = {}".format(time.time() - t2)
-        if timing: print "batch time = {}".format(time.time() - t0)
-        if total_steps % print_freq == 0:
-           top1_a = top1.get_average_results()
-           top5_a = top5.get_average_results()
-           print "{},{},{}, {} , {}, loss = {:.2f}, avg loss = {:.2f}, batch time = {:.2f}".format(total_steps-1,k,i, format_dict(top1_a, "{:.2f}", "1-"), format_dict(top5_a,"{:.2f}","5-"), loss.data[0], loss_total / ((total_steps-1)%eval_frequency) , (time.time() - time_all)/ ((total_steps-1)%eval_frequency))
-        if total_steps % eval_frequency == 0:
-          print "eval..."    
-          etime = time.time()
-          (top1, top5) = eval_model(dev_loader, encoding, model)
-          model.train() 
-          print "... done after {:.2f} s".format(time.time() - etime)
-          top1_a = top1.get_average_results()
-          top5_a = top5.get_average_results()
+        # Each epoch has a training and validation phase
+        for phase in PHASES:
+            model.train((phase==TRAIN))
 
-          avg_score = top1_a["verb"] + top1_a["value"] + top1_a["value-all"] + top5_a["verb"] + top5_a["value"] + top5_a["value-all"] + top5_a["value*"] + top5_a["value-all*"]
-          avg_score /= 8
+            epoch_steps = 0
+            running_loss = 0.0
+            running_corrects = 0
+            train_loss_total = 0
 
-          print "Dev {} average :{:.2f} {} {}".format(total_steps-1, avg_score*100, format_dict(top1_a,"{:.2f}", "1-"), format_dict(top5_a, "{:.2f}", "5-"))
-          
-          avg_scores.append(avg_score)
-          maxv = max(avg_scores)
+            for i, (index, input, target) in enumerate(dataloaders[phase]):
+                epoch_steps += 1
+           
+                t0 = time.time()
+                t1 = time.time()
 
-          if maxv == avg_scores[-1]: 
-            torch.save(model.state_dict(), save_dir + "/{0}.model".format(maxv))   
-            print "new best model saved! {0}".format(maxv)
+                # setup inputs
+                input_var = torch.autograd.Variable(input)
+                target_var = torch.autograd.Variable(target.squeeze(1))
+                # input_var = torch.autograd.Variable(input.cuda())
+                # target_var = torch.autograd.Variable(target.cuda())
+                optimizer.zero_grad()
 
-          top1 = imSituTensorEvaluation(1, 3, encoding)
-          top5 = imSituTensorEvaluation(5, 3, encoding)
-          loss_total = 0
-          time_all = time.time()
+                # forward pass  
+                cls_scores = model(input)
+                _, preds = torch.max(cls_scores.data, 1)
+                loss = model.loss()(cls_scores, target_var)
+                if timing : print "forward time = {}".format(time.time() - t1)
+                
+                # backpropagate during train time
+                if phase == TRAIN:                    
+                    t1 = time.time()
+                    loss.backward()        
+                    optimizer.step()
+                    if timing: print "backward time = {}".format(time.time() - t1)
+                        
+                # update epoch statistics
+                running_loss += loss.item()
+                running_corrects += torch.sum(preds == target_var.data)
+                
+                # print stats for training
+                if epoch_steps % print_freq == 0:
+                    avg_loss = running_loss / (epoch_steps)
+                    batch_time = (time.time() - time_all)/ (epoch_steps)
+                    print "{} phase: {},{} loss = {:.2f}, avg loss = {:.2f}, batch time = {:.2f}".format(phase, epoch_steps-1, epoch, loss.item(), avg_loss, batch_time)
+                    print('-' * 10)
+
+            # print epoch stats
+            epoch_loss = running_loss / epoch_steps
+            epoch_acc = running_corrects / epoch_steps
+            print('{} Loss: {:.4f} Acc: {:.4f}'.format(phase, epoch_loss, epoch_acc))
+
+            # prepare plots
+            if phase == TRAIN:
+                train_acc.append(epoch_acc)
+                train_loss.append(epoch_loss)
+                epochs.append(epoch)
+            else:
+                val_acc.append(epoch_acc)
+                val_loss.append(epoch_loss)
+
+        # Plot Losses After Every Epoch
+        # plt.plot(epochs, train_loss, '-o', epochs, val_loss, '-o')
+        # plt.title('Loss')
+        # plt.show()
+        # print()
+
+        # deep copy the best model
+        if phase == VAL and epoch_acc > best_acc:
+            best_acc = epoch_acc
+            best_model_wts = copy.deepcopy(model.state_dict())
+
+    # Plot Summary
+    time_elapsed = time.time() - time_all
+    print('Training complete in {:.0f}m {:.0f}s'.format(
+        time_elapsed // 60, time_elapsed % 60))
+    print('Best val Acc: {:4f}'.format(best_acc))
+    
+    # Plot Accuracy at the end of training
+    # plt.plot(epochs, train_acc, '-o', epochs, val_acc, '-o')
+    # plt.title('Accuracy')
+    # plt.ylim(0.4,1.0)
+    # plt.show()
+
+    # load best model weights
+    model.load_state_dict(best_model_wts)
+    return model
 
 def train(args):
     # load and encode annotations
@@ -116,12 +150,13 @@ def train(args):
 
     train_loader  = torch.utils.data.DataLoader(dataset_train, batch_size = batch_size, shuffle = True, num_workers = 3) 
     dev_loader  = torch.utils.data.DataLoader(dataset_dev, batch_size = batch_size, shuffle = True, num_workers = 3) 
+    dataloaders = {TRAIN: train_loader, VAL: dev_loader}
 
     # Adam optimization algorithm: Adaptive per parameter learning rate based on first and second gradient moments
     # Good for problems with sparse gradients (NLP and CV)
     # model.cuda()
     optimizer = optim.Adam(model.parameters(), lr = args.learning_rate , weight_decay = args.weight_decay)
-    train_model(args.training_epochs, args.eval_frequency, train_loader, dev_loader, model, encoder, optimizer, args.output_dir)  
+    train_model(args.training_epochs, args.batch_size, args.eval_frequency, dataloaders, model, optimizer, args.output_dir)  
 
 # Sample execution: python train.py data/genders_train.json data/genders_dev.json model_output
 if __name__ == "__main__":
