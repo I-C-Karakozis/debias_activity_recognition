@@ -44,6 +44,12 @@ if __name__ == "__main__":
 
   parse_json(args)
 
+# Results for Dev Set
+
+# Output with "both genders present" excluded: 
+# Original sample count: 25200
+# Verbs: 175, Images with Man: 3283, Images with Woman: 2651
+# Final sample count: 5934
 
 # Results for Test Set
 
@@ -51,10 +57,3 @@ if __name__ == "__main__":
 # Original sample count: 25200
 # Verbs: 175, Images with Man: 3377, Images with Woman: 2509
 # Final sample count: 5886
-
-# Results for Dev Set
-
-# Output with "both genders present" excluded: 
-# Original sample count: 25200
-# Verbs: 175, Images with Man: 3283, Images with Woman: 2651
-# Final sample count: 5934
