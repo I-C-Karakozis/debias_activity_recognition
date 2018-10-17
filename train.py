@@ -17,12 +17,17 @@ TRAIN = "train"
 VAL = "val"
 PHASES = [TRAIN, VAL]
 
-def train_model(max_epoch, batch_size, eval_frequency, dataloaders, model, optimizer, save_dir): 
+def save_checkpoint(state, is_best=True, filename='models/checkpoint.pth.tar'):
+    if is_best:
+        torch.save(state, 'models/model_best.pth.tar')
+    else:
+        torch.save(state, filename)
+
+def train_model(max_epoch, batch_size, dataloaders, model, optimizer, save_dir): 
     time_all = time.time()
 
     # pmodel = torch.nn.DataParallel(model, device_ids=device_array)
     print_freq = 10
-    epoch_steps = 0
 
     # plot statistics
     train_acc = []
@@ -43,14 +48,16 @@ def train_model(max_epoch, batch_size, eval_frequency, dataloaders, model, optim
         for phase in PHASES:
             model.train((phase==TRAIN))
 
-            epoch_steps = 0
+            epoch_steps = 0.0
+            num_samples = 0.0
             running_loss = 0.0
             running_corrects = 0
             train_loss_total = 0
 
             for i, (index, input, target) in enumerate(dataloaders[phase]):
-                epoch_steps += 1
-           
+                epoch_steps += 1.0
+                num_samples += target.size()[0]
+
                 t0 = time.time()
                 t1 = time.time()
 
@@ -65,33 +72,32 @@ def train_model(max_epoch, batch_size, eval_frequency, dataloaders, model, optim
                 optimizer.zero_grad()
 
                 # forward pass  
-                cls_scores = model(input_var)
+                cls_scores = model(input)
                 _, preds = torch.max(cls_scores.data, 1)
                 loss = model.loss()(cls_scores, target_var)
-                if args.timing : print("forward time = {}".format(time.time() - t1))
+                if args.timing : print "forward time = {}".format(time.time() - t1)
                 
                 # backpropagate during train time
                 if phase == TRAIN:                    
                     t1 = time.time()
                     loss.backward()        
                     optimizer.step()
-                    if args.timing: print("backward time = {}".format(time.time() - t1))
+                    if args.timing: print "backward time = {}".format(time.time() - t1)
                         
                 # update epoch statistics
-                running_loss += loss.data[0]
+                running_loss += loss.item()
                 running_corrects += torch.sum(preds == target_var.data)
                 
                 # print stats for training
                 if epoch_steps % print_freq == 0:
-                    current_loss = loss.data[0]
                     avg_loss = running_loss / (epoch_steps)
                     batch_time = (time.time() - time_all)/ (epoch_steps)
-                    print("{} phase: {},{} loss = {:.2f}, avg loss = {:.2f}, batch time = {:.2f}".format(phase, epoch_steps-1, epoch, current_loss, avg_loss, batch_time))
+                    print "{} phase: {},{} loss = {:.2f}, avg loss = {:.2f}, batch time = {:.2f}".format(phase, epoch_steps-1, epoch, loss.item(), avg_loss, batch_time)
                     print('-' * 10)
 
             # print epoch stats
             epoch_loss = running_loss / epoch_steps
-            epoch_acc = running_corrects / epoch_steps
+            epoch_acc = running_corrects / num_samples
             print('{} Loss: {:.4f} Acc: {:.4f}'.format(phase, epoch_loss, epoch_acc))
 
             # prepare plots
@@ -107,13 +113,12 @@ def train_model(max_epoch, batch_size, eval_frequency, dataloaders, model, optim
         if args.plot:
             plt.plot(epochs, train_loss, '-o', epochs, val_loss, '-o')
             plt.title('Loss')
-            plt.show()
-            print()
+            plt.savefig("figures/loss")
 
         # deep copy the best model
         if phase == VAL and epoch_acc > best_acc:
             best_acc = epoch_acc
-            best_model_wts = copy.deepcopy(model.state_dict())
+            best_model = copy.deepcopy(model.state_dict())
 
     # Plot Summary
     time_elapsed = time.time() - time_all
@@ -126,13 +131,14 @@ def train_model(max_epoch, batch_size, eval_frequency, dataloaders, model, optim
         plt.plot(epochs, train_acc, '-o', epochs, val_acc, '-o')
         plt.title('Accuracy')
         plt.ylim(0.4,1.0)
-        plt.show()
+        plt.savefig("figures/accuracy")
 
     # load best model weights
-    model.load_state_dict(best_model_wts)
-    return model
+    save_checkpoint(model, is_best=False, filename="models/final.pth.tar")
+    model.load_state_dict(best_model)
+    save_checkpoint(model)
 
-def train(args):
+def train():
     # load and encode annotations
     train_set = json.load(open(args.train_json))
     dev_set = json.load(open(args.dev_json))
@@ -161,9 +167,9 @@ def train(args):
     # Good for problems with sparse gradients (NLP and CV)
     if use_gpu: model.cuda()
     optimizer = optim.Adam(model.parameters(), lr = args.learning_rate , weight_decay = args.weight_decay)
-    train_model(args.training_epochs, args.batch_size, args.eval_frequency, dataloaders, model, optimizer, args.output_dir)  
+    train_model(args.training_epochs, args.batch_size, dataloaders, model, optimizer, args.output_dir)  
 
-# Sample execution: CUDA_VISIBLE_DEVICES=2,3 python train.py data/genders_train.json data/genders_dev.json model_output --timing
+# Sample execution: CUDA_VISIBLE_DEVICES=3 python train.py data/genders_train.json data/genders_dev.json model_output --plot > model_output/logs
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train action recognition network.") 
     parser.add_argument("train_json") 
@@ -174,7 +180,6 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", default=64, help="batch size for training", type=int)
     parser.add_argument("--learning_rate", default=1e-5, help="learning rate for ADAM", type=float)
     parser.add_argument("--weight_decay", default=5e-4, help="learning rate decay for ADAM", type=float)  
-    parser.add_argument("--eval_frequency", default=500, help="evaluate on dev set every N training steps", type=int) 
     parser.add_argument("--training_epochs", default=20, help="total number of training epochs", type=int)
     parser.add_argument("--plot", action='store_true', default=False, help="set to True to produce plots")
     parser.add_argument("--timing", action='store_true', default=False, help="set to True to time each pass through the network")
@@ -183,4 +188,4 @@ if __name__ == "__main__":
     if args.plot:
         import matplotlib.pyplot as plt
 
-    train(args)
+    train()

@@ -4,6 +4,8 @@ venv
 *.pyc
 
 logs*.txt
+models
+figures
 model_output
 resized_256
 baseline_models
