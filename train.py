@@ -54,7 +54,7 @@ def train_model(max_epoch, batch_size, dataloaders, model, optimizer, save_dir):
             running_corrects = 0
             train_loss_total = 0
 
-            for i, (index, input, target) in enumerate(dataloaders[phase]):
+            for i, (index, input, target) in enumerate(dataloaders[phase]): 
                 epoch_steps += 1.0
                 num_samples += target.size()[0]
 
@@ -72,7 +72,7 @@ def train_model(max_epoch, batch_size, dataloaders, model, optimizer, save_dir):
                 optimizer.zero_grad()
 
                 # forward pass  
-                cls_scores = model(input)
+                cls_scores = model(input_var)
                 _, preds = torch.max(cls_scores.data, 1)
                 loss = model.loss()(cls_scores, target_var)
                 if args.timing : print "forward time = {}".format(time.time() - t1)
@@ -85,14 +85,14 @@ def train_model(max_epoch, batch_size, dataloaders, model, optimizer, save_dir):
                     if args.timing: print "backward time = {}".format(time.time() - t1)
                         
                 # update epoch statistics
-                running_loss += loss.item()
+                running_loss += loss.data[0]
                 running_corrects += torch.sum(preds == target_var.data)
                 
                 # print stats for training
                 if epoch_steps % print_freq == 0:
                     avg_loss = running_loss / (epoch_steps)
                     batch_time = (time.time() - time_all)/ (epoch_steps)
-                    print "{} phase: {},{} loss = {:.2f}, avg loss = {:.2f}, batch time = {:.2f}".format(phase, epoch_steps-1, epoch, loss.item(), avg_loss, batch_time)
+                    print "{} phase: {},{} loss = {:.2f}, avg loss = {:.2f}, batch time = {:.2f}".format(phase, epoch_steps-1, epoch, loss.data[0], avg_loss, batch_time)
                     print('-' * 10)
 
             # print epoch stats
@@ -152,8 +152,10 @@ def train():
 
     # load datasets
     dataset_train = imSituSituation(args.image_dir, train_set, encoder, model.train_preprocess())
+    print("Train Set Size: {}".format(len(dataset_train)))
     dataset_dev = imSituSituation(args.image_dir, dev_set, encoder, model.dev_preprocess())
-
+    print("Validation Set Size: {}".format(len(dataset_dev)))
+    
     # setup gpus
     ngpus = 1
     device_array = [i for i in range(0,ngpus)]
