@@ -65,27 +65,28 @@ def train_model(max_epoch, batch_size, eval_frequency, dataloaders, model, optim
                 optimizer.zero_grad()
 
                 # forward pass  
-                cls_scores = model(input)
+                cls_scores = model(input_var)
                 _, preds = torch.max(cls_scores.data, 1)
                 loss = model.loss()(cls_scores, target_var)
-                if args.timing : print "forward time = {}".format(time.time() - t1)
+                if args.timing : print("forward time = {}".format(time.time() - t1))
                 
                 # backpropagate during train time
                 if phase == TRAIN:                    
                     t1 = time.time()
                     loss.backward()        
                     optimizer.step()
-                    if args.timing: print "backward time = {}".format(time.time() - t1)
+                    if args.timing: print("backward time = {}".format(time.time() - t1))
                         
                 # update epoch statistics
-                running_loss += loss.item()
+                running_loss += loss.data[0]
                 running_corrects += torch.sum(preds == target_var.data)
                 
                 # print stats for training
                 if epoch_steps % print_freq == 0:
+                    current_loss = loss.data[0]
                     avg_loss = running_loss / (epoch_steps)
                     batch_time = (time.time() - time_all)/ (epoch_steps)
-                    print "{} phase: {},{} loss = {:.2f}, avg loss = {:.2f}, batch time = {:.2f}".format(phase, epoch_steps-1, epoch, loss.item(), avg_loss, batch_time)
+                    print("{} phase: {},{} loss = {:.2f}, avg loss = {:.2f}, batch time = {:.2f}".format(phase, epoch_steps-1, epoch, current_loss, avg_loss, batch_time))
                     print('-' * 10)
 
             # print epoch stats
