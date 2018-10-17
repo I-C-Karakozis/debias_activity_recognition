@@ -188,6 +188,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.plot:
+        import matplotlib
+        matplotlib.use('Agg')
         import matplotlib.pyplot as plt
+        plt.ioff()
 
     train()
