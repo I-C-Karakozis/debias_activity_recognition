@@ -1,7 +1,6 @@
 import argparse
 import copy
 import json
-# import matplotlib.pyplot as plt
 import time
 
 import torch
@@ -10,19 +9,19 @@ from torch import optim
 from imsitu import *
 import network
 
-# TODO: plot option
-# TODO: bring back cuda; use_gpu
+use_gpu = torch.cuda.is_available()
 device_array = []
+args = []
 
 TRAIN = "train"
 VAL = "val"
 PHASES = [TRAIN, VAL]
 
-def train_model(max_epoch, batch_size, eval_frequency, dataloaders, model, optimizer, save_dir, timing=True): 
+def train_model(max_epoch, batch_size, eval_frequency, dataloaders, model, optimizer, save_dir): 
     time_all = time.time()
 
     # pmodel = torch.nn.DataParallel(model, device_ids=device_array)
-    print_freq = 1
+    print_freq = 10
     epoch_steps = 0
 
     # plot statistics
@@ -56,24 +55,27 @@ def train_model(max_epoch, batch_size, eval_frequency, dataloaders, model, optim
                 t1 = time.time()
 
                 # setup inputs
-                input_var = torch.autograd.Variable(input)
-                target_var = torch.autograd.Variable(target.squeeze(1))
-                # input_var = torch.autograd.Variable(input.cuda())
-                # target_var = torch.autograd.Variable(target.cuda())
+                target = target.squeeze(1)
+                if use_gpu:
+                    input_var = torch.autograd.Variable(input.cuda())
+                    target_var = torch.autograd.Variable(target.cuda())
+                else:
+                    input_var = torch.autograd.Variable(input)
+                    target_var = torch.autograd.Variable(target)                    
                 optimizer.zero_grad()
 
                 # forward pass  
                 cls_scores = model(input)
                 _, preds = torch.max(cls_scores.data, 1)
                 loss = model.loss()(cls_scores, target_var)
-                if timing : print "forward time = {}".format(time.time() - t1)
+                if args.timing : print "forward time = {}".format(time.time() - t1)
                 
                 # backpropagate during train time
                 if phase == TRAIN:                    
                     t1 = time.time()
                     loss.backward()        
                     optimizer.step()
-                    if timing: print "backward time = {}".format(time.time() - t1)
+                    if args.timing: print "backward time = {}".format(time.time() - t1)
                         
                 # update epoch statistics
                 running_loss += loss.item()
@@ -101,10 +103,11 @@ def train_model(max_epoch, batch_size, eval_frequency, dataloaders, model, optim
                 val_loss.append(epoch_loss)
 
         # Plot Losses After Every Epoch
-        # plt.plot(epochs, train_loss, '-o', epochs, val_loss, '-o')
-        # plt.title('Loss')
-        # plt.show()
-        # print()
+        if args.plot:
+            plt.plot(epochs, train_loss, '-o', epochs, val_loss, '-o')
+            plt.title('Loss')
+            plt.show()
+            print()
 
         # deep copy the best model
         if phase == VAL and epoch_acc > best_acc:
@@ -118,10 +121,11 @@ def train_model(max_epoch, batch_size, eval_frequency, dataloaders, model, optim
     print('Best val Acc: {:4f}'.format(best_acc))
     
     # Plot Accuracy at the end of training
-    # plt.plot(epochs, train_acc, '-o', epochs, val_acc, '-o')
-    # plt.title('Accuracy')
-    # plt.ylim(0.4,1.0)
-    # plt.show()
+    if args.plot:
+        plt.plot(epochs, train_acc, '-o', epochs, val_acc, '-o')
+        plt.title('Accuracy')
+        plt.ylim(0.4,1.0)
+        plt.show()
 
     # load best model weights
     model.load_state_dict(best_model_wts)
@@ -139,7 +143,7 @@ def train(args):
     if args.weights_file is not None:
         model.load_state_dict(torch.load(args.weights_file))
 
-    # load datasets; # TODO: target should be single index
+    # load datasets
     dataset_train = imSituSituation(args.image_dir, train_set, encoder, model.train_preprocess())
     dataset_dev = imSituSituation(args.image_dir, dev_set, encoder, model.dev_preprocess())
 
@@ -154,11 +158,11 @@ def train(args):
 
     # Adam optimization algorithm: Adaptive per parameter learning rate based on first and second gradient moments
     # Good for problems with sparse gradients (NLP and CV)
-    # model.cuda()
+    if use_gpu: model.cuda()
     optimizer = optim.Adam(model.parameters(), lr = args.learning_rate , weight_decay = args.weight_decay)
     train_model(args.training_epochs, args.batch_size, args.eval_frequency, dataloaders, model, optimizer, args.output_dir)  
 
-# Sample execution: python train.py data/genders_train.json data/genders_dev.json model_output
+# Sample execution: CUDA_VISIBLE_DEVICES=2,3 python train.py data/genders_train.json data/genders_dev.json model_output --timing
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train action recognition network.") 
     parser.add_argument("train_json") 
@@ -171,6 +175,11 @@ if __name__ == "__main__":
     parser.add_argument("--weight_decay", default=5e-4, help="learning rate decay for ADAM", type=float)  
     parser.add_argument("--eval_frequency", default=500, help="evaluate on dev set every N training steps", type=int) 
     parser.add_argument("--training_epochs", default=20, help="total number of training epochs", type=int)
+    parser.add_argument("--plot", action='store_true', default=False, help="set to True to produce plots")
+    parser.add_argument("--timing", action='store_true', default=False, help="set to True to time each pass through the network")
     args = parser.parse_args()
+
+    if args.plot:
+        import matplotlib.pyplot as plt
 
     train(args)

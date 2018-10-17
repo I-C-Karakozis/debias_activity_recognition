@@ -1,8 +1,7 @@
-# Code adapted from: https://github.com/my89/imSitu/blob/master/baseline_crf.py
+# Code borrowed from: https://github.com/my89/imSitu/blob/master/baseline_crf.py
 
 import torch as torch
 import torch.utils.data as data
-import json
 from PIL import Image
 import os
 import os.path
@@ -217,37 +216,6 @@ class imSituVerbRoleLocalNounEncoder(imSituVerbRoleNounEncoder):
         _fr[r]=n
       rv["frames"].append(_fr)
     return rv 
-
-class imSituSimpleImageFolder(data.Dataset):
- # partially borrowed from ImageFolder dataset, but eliminating the assumption about labels
-   def is_image_file(self,filename):
-    return any(filename.endswith(extension) for extension in self.ext)  
-  
-   def get_images(self,dir):
-    images = []
-    for target in os.listdir(dir):
-        f = os.path.join(dir, target)
-        if os.path.isdir(f):
-            continue
-        if self.is_image_file(f):
-          images.append(target)
-    return images
-
-   def __init__(self, root, transform=None):
-        self.root = root
-        self.transform = transform
-        #list all images        
-        self.ext = [ '.jpg', '.JPG', '.jpeg', '.JPEG', '.png', '.PNG', '.ppm', '.PPM', '.bmp', '.BMP',]
-        self.images = self.get_images(root)
- 
-   def __getitem__(self, index):
-        _id = os.path.join(self.root,self.images[index])
-        img = Image.open(_id).convert('RGB')
-        if self.transform is not None: img = self.transform(img)
-        return img, torch.LongTensor([index])
-
-   def __len__(self):
-        return len(self.images)
 
 class imSituSituation(data.Dataset):
    def __init__(self, root, annotation_file, encoder, transform=None):
