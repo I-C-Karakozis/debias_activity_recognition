@@ -61,7 +61,7 @@ def evaluate():
     
     evaluate_model(test_loader, model)  
 
-# Sample execution: CUDA_VISIBLE_DEVICES=3 python eval.py data/genders_test.json model_output/encoder --weights_file models/model_best.pth.tar
+# Sample execution: CUDA_VISIBLE_DEVICES=0 python eval.py data/genders_test.json model_output/encoder --weights_file models/model_best.pth.tar
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Test action recognition network.") 
     parser.add_argument("test_json") 

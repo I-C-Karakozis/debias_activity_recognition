@@ -37,10 +37,9 @@ def parse_json(args):
             human_count[verb][1] = human_count[verb][1] + 1
         
     # output set statistics; check sample stability across different thresholds
-    for i in range(THRESHOLD - 20 , THRESHOLD + 20):
-        human_verbs = [k for k in human_count if sum(human_count[k]) > THRESHOLD and min(human_count[k]) >= MIN_INSTANCES_PER_GENDER]    
-        print_stats(human_count, human_verbs)
-    print("------------------------------------------------------------")
+    # for i in range(THRESHOLD - 20 , THRESHOLD + 20):
+    human_verbs = [k for k in human_count if sum(human_count[k]) > THRESHOLD and min(human_count[k]) >= MIN_INSTANCES_PER_GENDER]    
+    print_stats(human_count, human_verbs)
 
     # write verbs of humans in action
     with open(args.human_verbs_txt, 'w') as f:

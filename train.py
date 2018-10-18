@@ -19,12 +19,6 @@ TRAIN = "train"
 VAL = "val"
 PHASES = [TRAIN, VAL]
 
-def save_checkpoint(state, is_best=True, filename='models/checkpoint.pth.tar'):
-    if is_best:
-        torch.save(state, 'models/model_best.pth.tar')
-    else:
-        torch.save(state, filename)
-
 def train_model(max_epoch, batch_size, dataloaders, model, optimizer, save_dir): 
     time_all = time.time()
 
@@ -147,9 +141,9 @@ def train_model(max_epoch, batch_size, dataloaders, model, optimizer, save_dir):
         plt.savefig("figures/accuracy")
 
     # load best model weights
-    save_checkpoint(model, is_best=False, filename="models/final.pth.tar")
+    model.save_state_dict('models/final.pth.tar')
     model.load_state_dict(best_model)
-    save_checkpoint(model)
+    model.save_state_dict('models/best.pth.tar')
 
 def train():
     # load and encode annotations
@@ -196,6 +190,7 @@ if __name__ == "__main__":
     parser.add_argument("--learning_rate", default=1e-5, help="learning rate for ADAM", type=float)
     parser.add_argument("--weight_decay", default=5e-4, help="learning rate decay for ADAM", type=float)  
     parser.add_argument("--training_epochs", default=20, help="total number of training epochs", type=int)
+    parser.add_argument("--binary", action='store_true', default=False, help="set to True to perform binary classification on genders")
     parser.add_argument("--plot", action='store_true', default=False, help="set to True to produce plots")
     parser.add_argument("--timing", action='store_true', default=False, help="set to True to time each pass through the network")
     args = parser.parse_args()        

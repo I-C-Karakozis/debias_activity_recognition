@@ -88,36 +88,18 @@ class imSituVerbRoleNounEncoder:
     return rv     
 
   # produce a tensor of the batch of situations
-  def to_tensor(self, situations, use_role = True, use_verb = True, use_only_verb = True):
+  def to_tensor(self, situations):
     rv = []
     for situation in situations:
       _rv = self.encode(situation)
 
       # append encoded verb label
       verb = _rv["verb"]
-      items = []
-      if use_verb: 
-        items.append(verb)
-      
-      # append encoded role labels
-      if not use_only_verb:
-        for frame in _rv["frames"]:
-        # sort roles
-          _f = sorted(frame, key = lambda x : x[0])
-          k = 0
-          for (r,n) in _f: 
-            if use_role : items.append(r)
-            items.append(n)
-            k+=1
-          while k < self.mr: 
-            if use_role: items.append(self.pad_symbol())
-            items.append(self.pad_symbol())
-            k+=1
-      rv.append(torch.LongTensor(items))
+      rv.append(torch.LongTensor([verb]))
     return torch.cat(rv)
   
   # the tensor is BATCH x VERB X FRAME
-  def to_situation(self, tensor, use_verb_only = False):
+  def to_situation(self, tensor, use_verb_only=True):
     (batch,verbd,_) = tensor.size()
     rv = []
     for b in range(0, batch):

@@ -3,6 +3,17 @@ import torch
 import torch.nn as nn
 import torchvision as tv
 
+class Adversary(nn.Module):
+    def __init__(self, insize):
+        super(Adversary, self).__init__()
+        num_domains = 2
+        self.insize = insize
+        self.linear1 = nn.Linear(insize, num_domains)
+
+    def forward(self, x):
+       x = x.view(-1, self.insize)
+       return self.linear1(x)
+
 def initLinear(linear, val = None):
     if val is None:
         fan = linear.in_features + linear.out_features 
@@ -66,7 +77,8 @@ class resnet_modified_small(nn.Module):
         x = self.dropout2d(x)
 
         features = self.dropout(self.relu(self.linear(x.view(-1, 7*7*self.base_size()))))
-        return self.cls(features)
+        cls_scores = self.cls(features)
+        return cls_scores
 
     def loss(self):
         return torch.nn.CrossEntropyLoss()
