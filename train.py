@@ -9,7 +9,7 @@ from torch import optim
 from imsitu import *
 import network
 
-# TODO: label hplots better
+# TODO: label plots better
 
 use_gpu = torch.cuda.is_available()
 device_array = []
@@ -49,7 +49,10 @@ def train_model(max_epoch, batch_size, dataloaders, model, optimizer, save_dir):
 
         # Each epoch has a training and validation phase
         for phase in PHASES:
-            model.train((phase==TRAIN))
+            if phase == TRAIN:
+                model.train()
+            else:
+                model.eval()
 
             epoch_steps = 0.0
             num_samples = 0.0
@@ -153,7 +156,7 @@ def train():
     train_set = json.load(open(args.train_json))
     dev_set = json.load(open(args.dev_json))
     encoder = imSituVerbRoleLocalNounEncoder(train_set)
-    torch.save(encoder, "data/encoder")
+    torch.save(encoder, "model_output/encoder")
 
     # load model
     model = network.resnet_modified_small(encoder)

@@ -1,9 +1,9 @@
-# install pip
-curl https://bootstrap.pypa.io/get-pip.py -o../get-pip.py
-python ../get-pip.py --user
+# # install pip
+# curl https://bootstrap.pypa.io/get-pip.py -o../get-pip.py
+# python ../get-pip.py --user
 
-# setup virtualenv
-export PATH=$PATH:/Users/ick/Library/Python/2.7/bin
+# # setup virtualenv
+# export PATH=$PATH:/Users/ick/Library/Python/2.7/bin
 pip install virtualenv --user
 virtualenv venv 
 source venv/bin/activate

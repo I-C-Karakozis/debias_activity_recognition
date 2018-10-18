@@ -50,6 +50,7 @@ class resnet_modified_small(nn.Module):
 
     def train_preprocess(self): return self.train_transform
     def dev_preprocess(self): return self.dev_transform
+    def test_preprocess(self): return self.dev_transform
 
     def forward(self, x):
         x = self.resnet.conv1(x)

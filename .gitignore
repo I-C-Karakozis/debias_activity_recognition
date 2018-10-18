@@ -3,8 +3,6 @@
 venv
 *.pyc
 
-logs*.txt
-models
 model_output
 resized_256
 baseline_models
