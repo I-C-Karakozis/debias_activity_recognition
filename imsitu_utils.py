@@ -42,6 +42,7 @@ def print_stats(human_count, human_verbs):
     man_count = sum(human_count[k][0] for k in human_verbs)
     woman_count = sum(human_count[k][1] for k in human_verbs)
     print("Verbs: {0}, Images with Man: {1}, Images with Woman: {2}".format(len(human_verbs), man_count, woman_count))
+    print("Total Image Count: {0}".format(man_count + woman_count))
     print("-" * 20)
 
 

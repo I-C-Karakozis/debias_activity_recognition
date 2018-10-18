@@ -15,6 +15,7 @@ from network import *
 from imsitu  import *
 
 # TODO: parallelize
+# TODO: breakdown per gender and per activity
 use_gpu = torch.cuda.is_available()
 
 def __train(train_loader, classifier, discriminator, optimizer, layer_index):
