@@ -9,6 +9,8 @@ from torch import optim
 from imsitu import *
 import network
 
+# TODO: label hplots better
+
 use_gpu = torch.cuda.is_available()
 device_array = []
 args = []
@@ -38,6 +40,7 @@ def train_model(max_epoch, batch_size, dataloaders, model, optimizer, save_dir):
 
     # best model info
     best_acc = 0.0
+    best_val_epoch = 0
     best_model = copy.deepcopy(model.state_dict())
   
     for epoch in range(0, max_epoch):  
@@ -109,15 +112,10 @@ def train_model(max_epoch, batch_size, dataloaders, model, optimizer, save_dir):
                 val_acc.append(epoch_acc)
                 val_loss.append(epoch_loss)
 
-        # Plot Losses After Every Epoch
-        if args.plot:
-            plt.plot(epochs, train_loss, '-o', epochs, val_loss, '-o')
-            plt.title('Loss')
-            plt.savefig("figures/loss")
-
         # deep copy the best model
         if phase == VAL and epoch_acc > best_acc:
             best_acc = epoch_acc
+            best_val_epoch = epoch
             best_model = copy.deepcopy(model.state_dict())
 
     # Plot Summary
@@ -126,8 +124,21 @@ def train_model(max_epoch, batch_size, dataloaders, model, optimizer, save_dir):
         time_elapsed // 60, time_elapsed % 60))
     print('Best val Acc: {:4f}'.format(best_acc))
     
-    # Plot Accuracy at the end of training
     if args.plot:
+        # setup plotting
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        plt.ioff()
+
+        # Plot loss over time
+        plt.plot(epochs, train_loss, '-o', epochs, val_loss, '-o')
+        plt.title('Loss')
+        plt.savefig("figures/loss")
+
+        plt.clf()
+
+        # plot accuracy over time
         plt.plot(epochs, train_acc, '-o', epochs, val_acc, '-o')
         plt.title('Accuracy')
         plt.savefig("figures/accuracy")
@@ -184,12 +195,10 @@ if __name__ == "__main__":
     parser.add_argument("--training_epochs", default=20, help="total number of training epochs", type=int)
     parser.add_argument("--plot", action='store_true', default=False, help="set to True to produce plots")
     parser.add_argument("--timing", action='store_true', default=False, help="set to True to time each pass through the network")
-    args = parser.parse_args()
-
-    if args.plot:
-        import matplotlib
-        matplotlib.use('Agg')
-        import matplotlib.pyplot as plt
-        plt.ioff()
+    args = parser.parse_args()        
 
     train()
+
+# 40 epochs, overfitting after ~25 epochs of training
+# Training complete in 66m 58s
+# Best val Acc: 0.346478
