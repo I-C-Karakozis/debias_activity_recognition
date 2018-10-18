@@ -44,7 +44,6 @@ def train_all(args):
 
     # load classifier
     classifier, device = load_classifier(args.weights_file, encoder)
-    classifier.eval()
 
     # load datasets
     dataset_train = imSituSituation(args.image_dir, train_set, encoder, classifier.train_preprocess())
@@ -80,10 +79,9 @@ def train_all(args):
         advs[i] = advs[i].to(device)
         if device == 'cuda':
             advs[i] = torch.nn.DataParallel(advs[i])
-        advs[i].train()
         optimizer = optim.SGD(advs[i].parameters(), lr=0.001, momentum=0.9)
         optimizers.append(optimizer)
-        
+
     criterion = nn.CrossEntropyLoss()
 
     best_accs = [0] * len(advs)
@@ -91,22 +89,22 @@ def train_all(args):
     # train all discriminators concurrently
     for k in range(epochs):
         for i in range(len(advs)):
-            __train(trainloader, classifier, advs[i], optimizers[i],
-                    criterion, device, i)
-            best_accs[i] = __test(testloader, classifier, advs[i],
-                    optimizers[i], criterion, device, best_accs[i], i)
+            __train(trainloader, classifier, advs[i], optimizers[i], criterion, device, i-1)
+            best_accs[i] = __test(testloader, classifier, advs[i], optimizers[i], criterion, device, i-1)
 
     print(best_accs)
     return
 
-def __train(trainloader, classifier, discriminator, optimizer, criterion, dev,
-        layer_index):
+def __train(trainloader, classifier, discriminator, optimizer, criterion, dev, layer_index):
+    classifier.eval()
+    discriminator.train()
+
     train_loss = 0
     correct = 0
     total = 0
 
     for batch_idx, (inputs, targets) in enumerate(trainloader):
-        domains = targets[:][1]
+        domains = targets.squeeze(1)
         inputs, targets = inputs.to(dev), domains.to(dev)
         classes = classifier(inputs)[layer_index]
 
@@ -126,17 +124,18 @@ def __train(trainloader, classifier, discriminator, optimizer, criterion, dev,
     return
 
 
-def __test(testloader, classifier, discriminator, optimizer, criterion, dev,
-        best_acc, layer_index):
+def __test(testloader, classifier, discriminator, optimizer, criterion, dev, layer_index):
     classifier.eval()
     discriminator.eval()
+
     test_loss = 0
     correct = 0
     total = 0
+
     ckpt = 'adv.' + str(layer_index)
     with torch.no_grad():
         for batch_idx, (inputs, targets) in enumerate(testloader):
-             inputs, targets = inputs.to(dev), domains.to(dev)
+            inputs, targets = inputs.to(dev), domains.to(dev)
             classes = classifier(inputs)[layer_index]
 
             outputs = discriminator(classes)
@@ -160,6 +159,7 @@ def __test(testloader, classifier, discriminator, optimizer, criterion, dev,
         }
         torch.save(state, './checkpoint/' + ckpt)
         best_acc = acc
+
     return best_acc
 
 

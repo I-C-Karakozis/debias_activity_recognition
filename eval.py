@@ -34,7 +34,6 @@ def evaluate_model(dataloader, model):
         cls_scores = model(input_var)
         _, preds = torch.max(cls_scores.data, 1)                
         running_corrects += torch.sum(preds == target_var.data)
-        break
 
     # Plot Summary
     time_elapsed = time.time() - time_all
@@ -59,6 +58,7 @@ def evaluate():
     batch_size = args.batch_size 
     test_loader  = torch.utils.data.DataLoader(dataset_test, batch_size = batch_size, shuffle = False, num_workers = 3)
     
+    if use_gpu: model.cuda()
     evaluate_model(test_loader, model)  
 
 # Sample execution: CUDA_VISIBLE_DEVICES=0 python eval.py data/genders_test.json model_output/encoder --weights_file models/model_best.pth.tar

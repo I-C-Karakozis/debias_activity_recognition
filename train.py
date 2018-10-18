@@ -140,16 +140,15 @@ def train_model(max_epoch, batch_size, dataloaders, model, optimizer, save_dir):
         plt.title('Accuracy')
         plt.savefig("figures/accuracy")
 
-    # load best model weights
-    model.save_state_dict('models/final.pth.tar')
-    model.load_state_dict(best_model)
-    model.save_state_dict('models/best.pth.tar')
+    # save models
+    torch.save(model.state_dict(), 'models/final.pth.tar')
+    torch.save(best_model, 'models/best.pth.tar')
 
 def train():
     # load and encode annotations
     train_set = json.load(open(args.train_json))
     dev_set = json.load(open(args.dev_json))
-    encoder = imSituVerbRoleLocalNounEncoder(train_set)
+    encoder = imSituVerbRoleNounEncoder(train_set)
     torch.save(encoder, "model_output/encoder")
 
     # load model
@@ -178,7 +177,7 @@ def train():
     optimizer = optim.Adam(model.parameters(), lr = args.learning_rate , weight_decay = args.weight_decay)
     train_model(args.training_epochs, args.batch_size, dataloaders, model, optimizer, args.output_dir)  
 
-# Sample execution: CUDA_VISIBLE_DEVICES=3 python train.py data/genders_train.json data/genders_dev.json model_output --plot > model_output/logs
+# Sample execution: CUDA_VISIBLE_DEVICES=0 python train.py data/genders_train.json data/genders_dev.json model_output --plot > model_output/logs
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train action recognition network.") 
     parser.add_argument("train_json") 

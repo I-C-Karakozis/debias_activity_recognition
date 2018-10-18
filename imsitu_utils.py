@@ -27,8 +27,10 @@ def get_agents(image):
     return agents
 
 def get_frame(image, agent):
+    ''' Maintain only verb and agent information '''
     image['frames'] = [frame for frame in image['frames'] if agent == frame['agent']]
-    image['frames'] = [image['frames'][0]]
+    frame = image['frames'][0]
+    image['frames'] = [{'agent': frame['agent']}]
     return image
 
 def print_noun_entries(nouns, target):
@@ -40,7 +42,7 @@ def print_stats(human_count, human_verbs):
     man_count = sum(human_count[k][0] for k in human_verbs)
     woman_count = sum(human_count[k][1] for k in human_verbs)
     print("Verbs: {0}, Images with Man: {1}, Images with Woman: {2}".format(len(human_verbs), man_count, woman_count))
-     print("-" * 20)
+    print("-" * 20)
 
 
 def collect_human_action(image_name, human_count, human_verbs, man, woman, data, output):
