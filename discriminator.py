@@ -152,8 +152,15 @@ def train_all(args):
             best_accs[i] = __test(test_loader, classifier, advs[i], optimizers[i], i, best_accs[i])
             print("-"*10)
 
+
+    # plot best accuracy per layer
     print(best_accs)
-    return
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    plt.ioff()
+    plt.plot([i for i in range(len(best_accs))], a, '-o')
+    plt.savefig("figures/discriminators_gender_cls_acc")
 
 # Sample execution: CUDA_VISIBLE_DEVICES=0 python discriminator.py model_output/encoder data/genders_train.json data/genders_test.json --weights_file models/best.pth.tar
 if __name__ == "__main__":
@@ -169,3 +176,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     train_all(args)
+
+# best_acc = [55.589534488617055, 62.249405368671425, 62.11348963642541, 65.83418280665987, 73.30954808019028, 72.08630648997621, 73.07169554875976, 72.579001019368]
