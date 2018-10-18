@@ -130,7 +130,6 @@ def train_model(max_epoch, batch_size, dataloaders, model, optimizer, save_dir):
     if args.plot:
         plt.plot(epochs, train_acc, '-o', epochs, val_acc, '-o')
         plt.title('Accuracy')
-        plt.ylim(0.4,1.0)
         plt.savefig("figures/accuracy")
 
     # load best model weights
