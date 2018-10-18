@@ -46,6 +46,7 @@ def __train(train_loader, classifier, discriminator, optimizer, layer_index):
 
         stats = 'Training Loss: %.3f | Acc: %.3f%% (%d/%d)' % \
             (train_loss/(batch_idx+1), 100.*correct/total, correct, total)
+        print(stats)
 
     return
 
@@ -76,6 +77,7 @@ def __test(test_loader, classifier, discriminator, optimizer, layer_index, best_
 
         stats = 'Testing Loss: %.3f | Acc: %.3f%% (%d/%d)' % \
             (test_loss/(batch_idx+1), 100.*correct/total, correct, total)
+        print(stats)
 
     acc = 100.*correct/total
     if acc > best_acc:
