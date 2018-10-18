@@ -14,32 +14,9 @@ import os
 from network import *
 from imsitu  import *
 
-def get_gpu_memory_map():
-    result = subprocess.check_output(
-        [
-            'nvidia-smi', '--query-gpu=memory.used',
-            '--format=csv,nounits,noheader'
-        ])
-    gpu_memory = [int(x) for x in result.strip().split('\n')]
-    return gpu_memory
+use_gpu = torch.cuda.is_available()
 
-def load_classifier(weights_file, encoder):
-    '''Return resnet architecture and get device'''
-
-    # load classifier
-    classifier = resnet_modified_small(encoder)
-    classifier.load_state_dict(torch.load(weights_file))
-
-    # setup gpu
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    classifier = classifier.to(device)
-    if device == 'cuda':
-        classifier = torch.nn.DataParallel(classifier)
-        cudnn.benchmark = True
-
-    return classifier, device
-
-def __train(train_loader, classifier, discriminator, optimizer, criterion, dev, layer_index):
+def __train(train_loader, classifier, discriminator, optimizer, layer_index):
     classifier.eval()
     discriminator.train()
 
@@ -49,13 +26,15 @@ def __train(train_loader, classifier, discriminator, optimizer, criterion, dev, 
 
     for batch_idx, (index, inputs, domains) in enumerate(train_loader):
         domains = domains.squeeze(1)
-        inputs, domains = inputs.to(dev), domains.to(dev)
+        if use_gpu: 
+            inputs = inputs.cuda()
+            domains = domains.cuda()
         classes = classifier(inputs)[layer_index]
         print(classes.size())
 
         optimizer.zero_grad()
         outputs = discriminator(classes)
-        loss = criterion(outputs, domains)
+        loss = classifier.loss()(outputs, domains)
         loss.backward()
         optimizer.step()
 
@@ -69,8 +48,7 @@ def __train(train_loader, classifier, discriminator, optimizer, criterion, dev, 
 
     return
 
-
-def __test(test_loader, classifier, discriminator, optimizer, criterion, dev, layer_index, best_acc):
+def __test(test_loader, classifier, discriminator, optimizer, layer_index, best_acc):
     classifier.eval()
     discriminator.eval()
 
@@ -82,12 +60,14 @@ def __test(test_loader, classifier, discriminator, optimizer, criterion, dev, la
     with torch.no_grad():
         for batch_idx, (index, inputs, domains) in enumerate(test_loader):
             domains = domains.squeeze(1)
-            inputs, domains = inputs.to(dev), domains.to(dev)
+            if use_gpu: 
+                inputs = inputs.cuda()
+                domains = domains.cuda()
             classes = classifier(inputs)[layer_index]
             print(classes.size())
 
             outputs = discriminator(classes)
-            loss = criterion(outputs, domains)
+            loss = classifier.loss()(outputs, domains)
 
             test_loss += loss.item()
             _, predicted = outputs.max(1)
@@ -116,7 +96,7 @@ def train_all(args):
     encoder = torch.load(args.encoding_file)
 
     # load classifier
-    classifier, device = load_classifier(args.weights_file, encoder)
+    classifier = load_classifier(args.weights_file, encoder, use_gpu)
 
     # load datasets
     dataset_train = imSituSituation(args.image_dir, train_set, encoder, classifier.train_preprocess(), gender_cls=True)
@@ -154,47 +134,36 @@ def train_all(args):
     # setup optimizers
     optimizers = []
     for i in range(len(advs)):
-        advs[i] = advs[i].to(device)
-        if device == 'cuda':
-            advs[i] = torch.nn.DataParallel(advs[i])
+        if use_gpu: advs[i] = advs[i].cuda()
         optimizer = optim.SGD(advs[i].parameters(), lr=0.001, momentum=0.9)
         optimizers.append(optimizer)
 
-    criterion = nn.CrossEntropyLoss()
-
+    # train and evaluate all discriminators concurrently
     best_accs = [0] * len(advs)
-
-    # train all discriminators concurrently
     for epoch in range(args.training_epochs):
         print("="*10)
         print("Epoch {}".format(epoch))
         print("="*10)
         for i in range(len(advs)):
             print("Discriminator {}:".format(i))
-            __train(train_loader, classifier, advs[i], optimizers[i], criterion, device, i)
-            best_accs[i] = __test(test_loader, classifier, advs[i], optimizers[i], criterion, device, i, best_accs[i])
+            __train(train_loader, classifier, advs[i], optimizers[i], i)
+            best_accs[i] = __test(test_loader, classifier, advs[i], optimizers[i], i, best_accs[i])
             print("-"*10)
 
     print(best_accs)
     return
 
-# Sample execution: CUDA_VISIBLE_DEVICES=0 python discriminator.py models/best.th.tar model_output/encoder data/genders_train.json data/genders_test.json
+# Sample execution: CUDA_VISIBLE_DEVICES=0 python discriminator.py model_output/encoder data/genders_train.json data/genders_test.json --weights_file models/best.pth.tar
 if __name__ == "__main__":
     parser = argparse.ArgumentParser('Train discriminator on network intermediate layers')
-    parser.add_argument("weights_file") 
     parser.add_argument("encoding_file") 
     parser.add_argument("train_json") 
     parser.add_argument("test_json") 
+    parser.add_argument("--weights_file", help="the model to start from")
     parser.add_argument("--image_dir", default="./resized_256")
     parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
     parser.add_argument('--resume', '-r', action='store_true', default=False, help='resume from checkpoint')
     parser.add_argument("--training_epochs", default=10, help="total number of training epochs", type=int)
     args = parser.parse_args()
-
-    gpu_memory = get_gpu_memory_map()
-    print(gpu_memory)
-    freest_gpu = min(xrange(len(gpu_memory)), key=gpu_memory.__getitem__)
-    os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
-    os.environ["CUDA_VISIBLE_DEVICES"]=str(freest_gpu)
 
     train_all(args)

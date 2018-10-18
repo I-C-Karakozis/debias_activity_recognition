@@ -14,6 +14,9 @@ class Adversary(nn.Module):
        x = x.view(-1, self.insize)
        return self.linear1(x)
 
+    def loss(self):
+        return torch.nn.CrossEntropyLoss()
+
 def initLinear(linear, val = None):
     if val is None:
         fan = linear.in_features + linear.out_features 
@@ -22,6 +25,14 @@ def initLinear(linear, val = None):
         spread = val
     linear.weight.data.uniform_(-spread,spread)
     linear.bias.data.uniform_(-spread,spread)
+
+def load_classifier(weights_file, encoder, use_gpu):
+    '''Return resnet architecture'''
+    classifier = resnet_modified_small(encoder)
+    if weights_file is not None: classifier.load_state_dict(torch.load(weights_file))
+    if use_gpu: classifier.cuda()
+
+    return classifier
 
 class resnet_modified_small(nn.Module):
     def base_size(self): return 512

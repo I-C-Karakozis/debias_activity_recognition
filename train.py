@@ -19,7 +19,7 @@ TRAIN = "train"
 VAL = "val"
 PHASES = [TRAIN, VAL]
 
-def train_model(max_epoch, batch_size, dataloaders, model, optimizer, save_dir): 
+def train_model(max_epoch, batch_size, dataloaders, model, optimizer): 
     time_all = time.time()
 
     # pmodel = torch.nn.DataParallel(model, device_ids=device_array)
@@ -152,9 +152,7 @@ def train():
     torch.save(encoder, "model_output/encoder")
 
     # load model
-    model = network.resnet_modified_small(encoder)
-    if args.weights_file is not None:
-        model.load_state_dict(torch.load(args.weights_file))
+    model = network.load_classifier(args.weights_file, encoder, use_gpu)
 
     # load datasets
     dataset_train = imSituSituation(args.image_dir, train_set, encoder, model.train_preprocess())
@@ -173,16 +171,14 @@ def train():
 
     # Adam optimization algorithm: Adaptive per parameter learning rate based on first and second gradient moments
     # Good for problems with sparse gradients (NLP and CV)
-    if use_gpu: model.cuda()
     optimizer = optim.Adam(model.parameters(), lr = args.learning_rate , weight_decay = args.weight_decay)
-    train_model(args.training_epochs, args.batch_size, dataloaders, model, optimizer, args.output_dir)  
+    train_model(args.training_epochs, args.batch_size, dataloaders, model, optimizer)  
 
-# Sample execution: CUDA_VISIBLE_DEVICES=0 python train.py data/genders_train.json data/genders_dev.json model_output --plot > model_output/logs
+# Sample execution: CUDA_VISIBLE_DEVICES=0 python train.py data/genders_train.json data/genders_dev.json --plot > model_output/logs
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train action recognition network.") 
     parser.add_argument("train_json") 
     parser.add_argument("dev_json")    
-    parser.add_argument("output_dir", help="location to put output, such as models, features, predictions")
     parser.add_argument("--image_dir", default="./resized_256", help="location of images to process")
     parser.add_argument("--weights_file", help="the model to start from")
     parser.add_argument("--batch_size", default=64, help="batch size for training", type=int)

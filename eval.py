@@ -48,17 +48,14 @@ def evaluate():
     test_set = json.load(open(args.test_json))
 
     # load model
-    model = network.resnet_modified_small(encoder)
-    if args.weights_file is not None:
-        model.load_state_dict(torch.load(args.weights_file))
+    model = network.load_classifier(args.weights_file, encoder, use_gpu)
 
     # load dataset
     dataset_test = imSituSituation(args.image_dir, test_set, encoder, model.test_preprocess())
     print("Test Set Size: {}".format(len(dataset_test)))
     batch_size = args.batch_size 
     test_loader  = torch.utils.data.DataLoader(dataset_test, batch_size = batch_size, shuffle = False, num_workers = 3)
-    
-    if use_gpu: model.cuda()
+
     evaluate_model(test_loader, model)  
 
 # Sample execution: CUDA_VISIBLE_DEVICES=0 python eval.py data/genders_test.json model_output/encoder --weights_file models/best.pth.tar
