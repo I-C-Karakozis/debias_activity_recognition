@@ -14,6 +14,7 @@ import os
 from network import *
 from imsitu  import *
 
+# TODO: parallelize
 use_gpu = torch.cuda.is_available()
 
 def __train(train_loader, classifier, discriminator, optimizer, layer_index):
@@ -27,8 +28,8 @@ def __train(train_loader, classifier, discriminator, optimizer, layer_index):
     for batch_idx, (index, inputs, domains) in enumerate(train_loader):
         domains = domains.squeeze(1)
         if use_gpu: 
-            inputs = inputs.cuda()
-            domains = domains.cuda()
+            inputs = torch.autograd.Variable(inputs.cuda())
+            domains = torch.autograd.Variable(domains.cuda())
         classes = classifier(inputs)[layer_index]
         print(classes.size())
 
@@ -38,10 +39,10 @@ def __train(train_loader, classifier, discriminator, optimizer, layer_index):
         loss.backward()
         optimizer.step()
 
-        train_loss += loss.item()
+        train_loss += loss.data[0]
         _, predicted = outputs.max(1)
         total += domains.size(0)
-        correct += predicted.eq(domains).sum().item()
+        correct += predicted.eq(domains).sum().data[0]
 
         stats = 'Training Loss: %.3f | Acc: %.3f%% (%d/%d)' % \
             (train_loss/(batch_idx+1), 100.*correct/total, correct, total)
@@ -57,25 +58,24 @@ def __test(test_loader, classifier, discriminator, optimizer, layer_index, best_
     total = 0
 
     ckpt = 'adv.' + str(layer_index)
-    with torch.no_grad():
-        for batch_idx, (index, inputs, domains) in enumerate(test_loader):
-            domains = domains.squeeze(1)
-            if use_gpu: 
-                inputs = inputs.cuda()
-                domains = domains.cuda()
-            classes = classifier(inputs)[layer_index]
-            print(classes.size())
+    for batch_idx, (index, inputs, domains) in enumerate(test_loader):
+        domains = domains.squeeze(1)
+        if use_gpu: 
+            inputs = torch.autograd.Variable(inputs.cuda())
+            domains = torch.autograd.Variable(domains.cuda())
+        classes = classifier(inputs)[layer_index]
+        print(classes.size())
 
-            outputs = discriminator(classes)
-            loss = classifier.loss()(outputs, domains)
+        outputs = discriminator(classes)
+        loss = classifier.loss()(outputs, domains)
 
-            test_loss += loss.item()
-            _, predicted = outputs.max(1)
-            total += domains.size(0)
-            correct += predicted.eq(domains).sum().item()
+        test_loss += loss.data[0]
+        _, predicted = outputs.max(1)
+        total += domains.size(0)
+        correct += predicted.eq(domains).sum().data[0]
 
-            stats = 'Testing Loss: %.3f | Acc: %.3f%% (%d/%d)' % \
-                (test_loss/(batch_idx+1), 100.*correct/total, correct, total)
+        stats = 'Testing Loss: %.3f | Acc: %.3f%% (%d/%d)' % \
+            (test_loss/(batch_idx+1), 100.*correct/total, correct, total)
 
     acc = 100.*correct/total
     if acc > best_acc:
