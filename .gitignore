@@ -3,6 +3,7 @@
 venv
 *.pyc
 
+models
 model_output
 resized_256
 baseline_models

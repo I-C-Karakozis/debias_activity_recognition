@@ -31,7 +31,7 @@ def evaluate_model(dataloader, model):
             target_var = torch.autograd.Variable(target)        
             
         # evaluate
-        cls_scores = model(input_var)
+        cls_scores = model(input_var)[-1]
         _, preds = torch.max(cls_scores.data, 1)                
         running_corrects += torch.sum(preds == target_var.data)
 
@@ -61,7 +61,7 @@ def evaluate():
     if use_gpu: model.cuda()
     evaluate_model(test_loader, model)  
 
-# Sample execution: CUDA_VISIBLE_DEVICES=0 python eval.py data/genders_test.json model_output/encoder --weights_file models/model_best.pth.tar
+# Sample execution: CUDA_VISIBLE_DEVICES=0 python eval.py data/genders_test.json model_output/encoder --weights_file models/best.pth.tar
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Test action recognition network.") 
     parser.add_argument("test_json") 
@@ -73,3 +73,5 @@ if __name__ == "__main__":
 
     evaluate()
 
+# Evaluation completed in 0m 12s
+# Accuracy: 0.341148

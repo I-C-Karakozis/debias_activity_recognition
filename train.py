@@ -72,7 +72,7 @@ def train_model(max_epoch, batch_size, dataloaders, model, optimizer, save_dir):
                 optimizer.zero_grad()
 
                 # forward pass  
-                cls_scores = model(input_var)
+                cls_scores = model(input_var)[-1]
                 _, preds = torch.max(cls_scores.data, 1)
                 loss = model.loss()(cls_scores, target_var)
                 if args.timing : print "forward time = {}".format(time.time() - t1)

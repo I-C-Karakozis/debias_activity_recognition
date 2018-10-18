@@ -63,22 +63,22 @@ class resnet_modified_small(nn.Module):
     def dev_preprocess(self): return self.dev_transform
     def test_preprocess(self): return self.dev_transform
 
-    def forward(self, x):
-        x = self.resnet.conv1(x)
+    def forward(self, out0):
+        x = self.resnet.conv1(out0)
         x = self.resnet.bn1(x)
         x = self.resnet.relu(x)
-        x = self.resnet.maxpool(x)
+        out1 = self.resnet.maxpool(x)
 
-        x = self.resnet.layer1(x)
-        x = self.resnet.layer2(x)
-        x = self.resnet.layer3(x)
-        x = self.resnet.layer4(x)
+        out2 = self.resnet.layer1(out1)
+        out3 = self.resnet.layer2(out2)
+        out4 = self.resnet.layer3(out3)
+        out5 = self.resnet.layer4(out4)
      
-        x = self.dropout2d(x)
+        x = self.dropout2d(out5)
 
         features = self.dropout(self.relu(self.linear(x.view(-1, 7*7*self.base_size()))))
         cls_scores = self.cls(features)
-        return cls_scores
+        return [out0, out1, out2, out3, out4, out5, features, cls_scores]
 
     def loss(self):
         return torch.nn.CrossEntropyLoss()
