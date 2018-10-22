@@ -11,8 +11,8 @@ import json
 import subprocess
 import os
 
-from network import *
-from imsitu  import *
+from lib.network import *
+from lib.imsitu  import *
 
 # TODO: parallelize
 # TODO: breakdown per gender and per activity

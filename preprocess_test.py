@@ -1,7 +1,7 @@
 import argparse
 import json
 
-from imsitu_utils import *
+from lib.imsitu_utils import *
 
 def parse_json(args):
     # collect gender encodings

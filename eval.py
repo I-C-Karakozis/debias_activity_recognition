@@ -4,8 +4,8 @@ import time
 
 import torch
 
-from imsitu import *
-import network
+from lib.imsitu import *
+from lib import network
 
 use_gpu = torch.cuda.is_available()
 

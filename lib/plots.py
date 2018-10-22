@@ -1,24 +1,3 @@
-import argparse
-import copy
-import json
-import time
-
-import torch
-from torch import optim
-
-from lib.imsitu import *
-from lib import network
-
-# TODO: label plots better
-
-use_gpu = torch.cuda.is_available()
-device_array = []
-args = []
-
-TRAIN = "train"
-VAL = "val"
-PHASES = [TRAIN, VAL]
-
 def train_model(max_epoch, batch_size, dataloaders, model, optimizer): 
     time_all = time.time()
 
@@ -174,27 +153,3 @@ def train():
     # Good for problems with sparse gradients (NLP and CV)
     optimizer = optim.Adam(model.parameters(), lr = args.learning_rate , weight_decay = args.weight_decay)
     train_model(args.training_epochs, args.batch_size, dataloaders, model, optimizer)  
-
-# Sample execution: 
-# CUDA_VISIBLE_DEVICES=0 python train.py data/genders_train.json data/genders_dev.json --plot > model_output/logs
-# CUDA_VISIBLE_DEVICES=0 python train.py data/balanced_genders_train.json data/balanced_genders_dev.json --plot > model_output/logs
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Train action recognition network.") 
-    parser.add_argument("train_json") 
-    parser.add_argument("dev_json")    
-    parser.add_argument("--image_dir", default="./resized_256", help="location of images to process")
-    parser.add_argument("--weights_file", help="the model to start from")
-    parser.add_argument("--batch_size", default=64, help="batch size for training", type=int)
-    parser.add_argument("--learning_rate", default=1e-5, help="learning rate for ADAM", type=float)
-    parser.add_argument("--weight_decay", default=5e-4, help="learning rate decay for ADAM", type=float)  
-    parser.add_argument("--training_epochs", default=20, help="total number of training epochs", type=int)
-    parser.add_argument("--binary", action='store_true', default=False, help="set to True to perform binary classification on genders")
-    parser.add_argument("--plot", action='store_true', default=False, help="set to True to produce plots")
-    parser.add_argument("--timing", action='store_true', default=False, help="set to True to time each pass through the network")
-    args = parser.parse_args()        
-
-    train()
-
-# 40 epochs, overfitting after ~25 epochs of training
-# Training complete in 66m 58s
-# Best val Acc: 0.346478

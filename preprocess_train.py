@@ -3,7 +3,7 @@ import copy
 import json
 import os
 
-from imsitu_utils import *
+from lib.imsitu_utils import *
 
 # TODO: concatenate train and dev for evaluation
 
