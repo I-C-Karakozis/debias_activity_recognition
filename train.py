@@ -159,7 +159,6 @@ def train():
     print("Train Set Size: {}".format(len(dataset_train)))
     dataset_dev = imSituSituation(args.image_dir, dev_set, encoder, model.dev_preprocess())
     print("Validation Set Size: {}".format(len(dataset_dev)))
-    exit()
     
     # setup gpus
     ngpus = 1

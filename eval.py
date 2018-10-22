@@ -17,8 +17,9 @@ def evaluate_model(dataloader, model, encoder):
     running_corrects = 0
     mx = len(dataloader)
 
-    correct_per_activity = [0] * encoder.n_verbs
-    count_per_activity = [0] * encoder.n_verbs
+    print(encoder.n_verbs())
+    correct_per_activity = [0 for i in range(encoder.n_verbs())]
+    count_per_activity = [0 for i in range(encoder.n_verbs())]
 
     for i, (indexes, input, target) in enumerate(dataloader):
         if i % 10 == 0: print("batch {} out of {}\r".format(i+1,mx))
@@ -39,7 +40,7 @@ def evaluate_model(dataloader, model, encoder):
         running_corrects += torch.sum(preds == target_var.data)
 
         # update per activity metrics
-        for label, pred in zip(target_var.data, cls_scores):
+        for label, pred in zip(target_var.data, preds):
             count_per_activity[label] = count_per_activity[label] + 1
             correct_per_activity[label] = correct_per_activity[label] + (label == pred)
 
