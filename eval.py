@@ -58,7 +58,9 @@ def evaluate():
 
     evaluate_model(test_loader, model)  
 
-# Sample execution: CUDA_VISIBLE_DEVICES=0 python eval.py data/genders_test.json model_output/encoder --weights_file models/best.pth.tar
+# Sample execution: 
+# CUDA_VISIBLE_DEVICES=0 python eval.py data/genders_test.json model_output/encoder --weights_file models/best.pth.tar
+# CUDA_VISIBLE_DEVICES=1 python eval.py data/balanced_genders_test.json model_output/encoder --weights_file models/best.pth.tar
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Test action recognition network.") 
     parser.add_argument("test_json") 
@@ -70,5 +72,8 @@ if __name__ == "__main__":
 
     evaluate()
 
-# Evaluation completed in 0m 12s
+# Skewed Test Set Size: 5886
 # Accuracy: 0.341148
+
+# Balanced Test Set Size: 2220
+# Accuracy: 0.310360

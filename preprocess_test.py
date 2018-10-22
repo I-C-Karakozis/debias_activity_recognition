@@ -50,6 +50,8 @@ def parse_json(args):
 # python preprocess_test.py data/balanced_human_verbs.txt data/test.json data/balanced_genders_test.json --balanced > stats/balanced_gender_test_stats.txt
 # python preprocess_test.py data/human_verbs.txt data/dev.json data/genders_dev.json > stats/gender_dev_stats.txt
 # python preprocess_test.py data/balanced_human_verbs.txt data/dev.json data/balanced_genders_dev.json --balanced > stats/balanced_gender_dev_stats.txt
+# python preprocess_test.py data/human_verbs.txt data/concat_test.json data/genders_concat_test.json > stats/gender_concat_test_stats.txt
+# python preprocess_test.py data/balanced_human_verbs.txt data/concat_test.json data/balanced_genders_concat_test.json --balanced > stats/balanced_gender_concat_test_stats.txt
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Fetch all actions with man or woman agents.")
   parser.add_argument("human_verbs_txt", help="Txt file to get verbs of humans in action.")
