@@ -3,29 +3,6 @@ import json
 
 from imsitu_utils import *
 
-def collect_all_human_action(image_name, human_count, human_verbs, man, woman, data, output):
-    image = data[image_name]
-
-    # validate human verb
-    verb = image["verb"]
-    if verb not in human_verbs: 
-        return
-    if verb not in human_count: 
-        human_count[verb] = [0 for i in range(2)];
-    
-    # collect all agents of action in the image
-    agents = get_agents(image)
-
-    # count humans in action and record gender distribution
-    if man in agents and woman in agents:
-        return
-    elif man in agents:
-        human_count[verb][0] = human_count[verb][0] + 1
-        output[image_name] = get_frame(image, man)
-    elif woman in agents:
-        human_count[verb][1] = human_count[verb][1] + 1
-        output[image_name] = get_frame(image, woman)
-
 def parse_json(args):
     # collect gender encodings
     nouns, verbs = get_space()
@@ -36,13 +13,24 @@ def parse_json(args):
     human_verbs = open(args.human_verbs_txt).readlines()
     human_verbs = [verb.strip('\n') for verb in human_verbs]
     data = json.load(open(args.data_json))
-
-    # collect correct samples
     print("Original sample count: {0}".format(len(data)))
+
+    # collect correct number of samples amnd activities
     output = dict()
-    human_count = dict()
-    for image_name in data:
-        collect_all_human_action(image_name, human_count, human_verbs, man, woman, data, output)
+    if args.balanced:
+        # enforce gender balance
+        human_count = count_human_activities(data, man, woman)
+        for verb in human_verbs:
+            human_count[verb][0] = min(human_count[verb][0], human_count[verb][1])
+            human_count[verb][1] = human_count[verb][0]
+
+        # collect dataset annotations
+        for image_name in data:
+            collect_limited_human_activities(image_name, human_count, human_verbs, man, woman, data, output)
+    else:
+        human_count = dict()
+        for image_name in data:
+            collect_all_human_activities(image_name, human_count, human_verbs, man, woman, data, output)
     print_stats(human_count, human_verbs)
         
     # write adjusted dataset
@@ -55,13 +43,16 @@ def parse_json(args):
     #     print(output[k])
 
 # Sample execution: 
-# python preprocess_test.py data/human_verbs.txt data/test.json data/genders_test.json 
-# python preprocess_test.py data/human_verbs.txt data/dev.json data/genders_dev.json
+# python preprocess_test.py data/human_verbs.txt data/test.json data/genders_test.json > stats/gender_test_stats.txt
+# python preprocess_test.py data/balanced_human_verbs.txt data/test.json data/balanced_genders_test.json > stats/balanced_gender_test_stats.txt
+# python preprocess_test.py data/human_verbs.txt data/dev.json data/genders_dev.json > stats/gender_dev_stats.txt
+# python preprocess_test.py data/balanced_human_verbs.txt data/dev.json data/balanced_genders_dev.json > stats/balanced_gender_dev_stats.txt
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Fetch all actions with man or woman agents.")
   parser.add_argument("human_verbs_txt", help="Txt file to get verbs of humans in action.")
   parser.add_argument("data_json", help="Input dataset json to preprocess.") 
   parser.add_argument("output_json", help="Output dataset json to collect.")
+  parser.add_argument("--balanced", action='store_true', default=False, help="set to True to form gender balanced dataset")
   args = parser.parse_args()
 
   parse_json(args)

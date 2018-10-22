@@ -12,37 +12,16 @@ from imsitu_utils import *
 THRESHOLD = 75 
 MIN_INSTANCES_PER_GENDER = 20
 
-SKEW = 0.75
+SKEW_NUM = 3
 SKEW_DENOM = 4
 UPPERBOUND_CHECK = 200
-
-def collect_limited_human_action(image_name, human_count, human_verbs, man, woman, data, output):
-    image = data[image_name]
-
-    # validate human verb
-    verb = image["verb"]
-    if verb not in human_verbs: 
-        return
-    
-    # collect all agents of action in the image
-    agents = get_agents(image)
-
-    # count humans in action and record gender distribution
-    if man in agents and woman in agents:
-        return
-    elif human_count[verb][0] > 0 and man in agents:
-        human_count[verb][0] = human_count[verb][0] - 1
-        output[image_name] = get_frame(image, man)
-    elif human_count[verb][1] > 0 and woman in agents:
-        human_count[verb][1] = human_count[verb][1] - 1
-        output[image_name] = get_frame(image, woman)
 
 def collect_dataset(data, man, woman, human_verbs, human_count, output_json):
     # write adjusted dataset
     output = dict()
     print_stats(human_count, human_verbs)
     for image_name in data:
-        collect_limited_human_action(image_name, human_count, human_verbs, man, woman, data, output)
+        collect_limited_human_activities(image_name, human_count, human_verbs, man, woman, data, output)
 
     with open(output_json, "w") as f:     
         json.dump(output, f) 
@@ -103,7 +82,7 @@ def prepare_balanced_and_skewed_datasets(data, man, woman, human_count, output_j
     man_skew_count = min(man_skew_count, woman_skew_count)
     woman_skew_count = min(man_skew_count, woman_skew_count)
 
-    # collect datasets
+    # prepare dataset sample ratios between genders and activities
     balanced_human_count = dict(); skewed_human_count = dict()
     for verb in human_verbs:
         # identify skew direction
@@ -127,8 +106,9 @@ def prepare_balanced_and_skewed_datasets(data, man, woman, human_count, output_j
         skewed_human_count[verb] = [0] * 2
         skewed_human_count[verb][hi] = 3 * max_per_verb_image_count / 5
         skewed_human_count[verb][lo] = max_per_verb_image_count / 5
+    
+    # collect balanced and skewed dataset annotations
     human_verbs = [k for k in balanced_human_count]
-
     output_split = output_json.split("/")
     balanced_output_json = os.path.join(output_split[0], "balanced_"+output_split[1])
     collect_dataset(data, man, woman, human_verbs, balanced_human_count, balanced_output_json)
@@ -141,25 +121,10 @@ def parse_json(args):
     man = get_noun(nouns, MAN)
     woman = get_noun(nouns, WOMAN)
 
-    # count number of human agents per verb
+    # collect human activities
     data = json.load(open(args.data_json))
-    human_count = dict()
-    for image_name in data:
-        # extract image metadata
-        image = data[image_name]
-        verb = image["verb"]
-        if verb not in human_count: 
-            human_count[verb] = [0 for i in range(2)];
-        agents = get_agents(image)
-
-        # count humans in action and record gender distribution
-        if man in agents and woman in agents:
-            continue
-        elif man in agents:
-            human_count[verb][0] = human_count[verb][0] + 1
-        elif woman in agents:
-            human_count[verb][1] = human_count[verb][1] + 1
-
+    human_count = count_human_activities(data, man, woman)
+    
     # collect datasets to form annotations for 
     if args.balanced_and_skewed:
         datasets = prepare_balanced_and_skewed_datasets(data, man, woman, human_count, args.output_json)
@@ -179,18 +144,3 @@ if __name__ == "__main__":
   args = parser.parse_args()
 
   parse_json(args)
-
-
-# Results for Training Set
-
-# Output with "both genders present" excluded: 
-# Total verbs 504
-# Total nouns 82115
-# Verbs: 175, Images with Man: 12164, Images with Woman: 9374
-# Total Image Count: 21538
-
-# Output for balanced dataset: 
-# Total verbs 504
-# Total nouns 82115
-# Verbs: 175, Images with Man: 7392, Images with Woman: 7392
-# Total Image Count: 14784
