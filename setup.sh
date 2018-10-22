@@ -34,7 +34,6 @@ rm resized.tar
 python preprocess_train.py data/train.json data/genders_train.json data/human_verbs.txt > stats/gender_train_stats.txt
 python preprocess_train.py data/train.json data/genders_train.json data/balanced_human_verbs.txt --balanced_and_skewed > stats/balanced_gender_train_stats.txt
 python preprocess_test.py data/human_verbs.txt data/test.json data/genders_test.json > stats/gender_test_stats.txt
-python preprocess_test.py data/balanced_human_verbs.txt data/test.json data/balanced_genders_test.json > stats/balanced_gender_test_stats.txt
+python preprocess_test.py data/balanced_human_verbs.txt data/test.json data/balanced_genders_test.json --balanced > stats/balanced_gender_test_stats.txt
 python preprocess_test.py data/human_verbs.txt data/dev.json data/genders_dev.json > stats/gender_dev_stats.txt
-python preprocess_test.py data/balanced_human_verbs.txt data/dev.json data/balanced_genders_dev.json > stats/balanced_gender_dev_stats.txt
-
+python preprocess_test.py data/balanced_human_verbs.txt data/dev.json data/balanced_genders_dev.json --balanced > stats/balanced_gender_dev_stats.txt

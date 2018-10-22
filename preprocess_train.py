@@ -9,7 +9,7 @@ from imsitu_utils import *
 
 # threshold used in the paper: 85 (resulting in 212 verbs)
 # if we remove images containing both men and women, we get 203 verbs
-THRESHOLD = 75 
+THRESHOLD = 85 
 MIN_INSTANCES_PER_GENDER = 20
 
 SKEW_NUM = 3
