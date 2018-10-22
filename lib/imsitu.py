@@ -38,6 +38,12 @@ class imSituVerbRoleNounEncoder:
     rv["agent"] = self.n_id[situation['frames'][0]['agent']]
     return rv   
 
+  def decode_verb(self, v_id):
+    return self.id_v[v_id]
+
+  def decode_noun(self, n_id):
+    return self.id_n[n_id]
+
   # produce a tensor of the batch of situations
   def to_tensor(self, situations, gender_cls=False):
     rv = []
