@@ -51,7 +51,10 @@ def evaluate_model(dataloader, model, encoder):
     print('Accuracy: {:4f}'.format(accuracy))
 
     # plot accuracy per activity
-    accuracies_per_activity = [correct / float(count) for correct, count in zip(correct_per_activity, count_per_activity) if count > 0 else -1]
+    accuracies_per_activity = []
+    for correct, count in zip(correct_per_activity, count_per_activity):
+        if count > 0: accuracies_per_activity.append(correct / float(count))
+        else: accuracies_per_activity.append(-1)
     plots.plot_accuracy_per_activity(accuracies_per_activity, encoder)
     
 def evaluate():
