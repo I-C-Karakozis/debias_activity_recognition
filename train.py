@@ -159,6 +159,7 @@ def train():
     print("Train Set Size: {}".format(len(dataset_train)))
     dataset_dev = imSituSituation(args.image_dir, dev_set, encoder, model.dev_preprocess())
     print("Validation Set Size: {}".format(len(dataset_dev)))
+    exit()
     
     # setup gpus
     ngpus = 1
@@ -174,7 +175,9 @@ def train():
     optimizer = optim.Adam(model.parameters(), lr = args.learning_rate , weight_decay = args.weight_decay)
     train_model(args.training_epochs, args.batch_size, dataloaders, model, optimizer)  
 
-# Sample execution: CUDA_VISIBLE_DEVICES=0 python train.py data/genders_train.json data/genders_dev.json --plot > model_output/logs
+# Sample execution: 
+# CUDA_VISIBLE_DEVICES=0 python train.py data/genders_train.json data/genders_dev.json --plot > model_output/logs
+# CUDA_VISIBLE_DEVICES=0 python train.py data/balanced_genders_train.json data/balanced_genders_dev.json --plot > model_output/logs
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train action recognition network.") 
     parser.add_argument("train_json") 

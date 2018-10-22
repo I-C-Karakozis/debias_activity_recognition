@@ -15,6 +15,7 @@ pip install -r requirements.txt
 mkdir model_output
 mkdir models
 mkdir figures
+mkdir stats
 
 # download data
 curl https://s3.amazonaws.com/my89-frame-annotation/public/of500_images_resized.tar > resized.tar

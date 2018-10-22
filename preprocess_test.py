@@ -3,6 +3,29 @@ import json
 
 from imsitu_utils import *
 
+def collect_all_human_action(image_name, human_count, human_verbs, man, woman, data, output):
+    image = data[image_name]
+
+    # validate human verb
+    verb = image["verb"]
+    if verb not in human_verbs: 
+        return
+    if verb not in human_count: 
+        human_count[verb] = [0 for i in range(2)];
+    
+    # collect all agents of action in the image
+    agents = get_agents(image)
+
+    # count humans in action and record gender distribution
+    if man in agents and woman in agents:
+        return
+    elif man in agents:
+        human_count[verb][0] = human_count[verb][0] + 1
+        output[image_name] = get_frame(image, man)
+    elif woman in agents:
+        human_count[verb][1] = human_count[verb][1] + 1
+        output[image_name] = get_frame(image, woman)
+
 def parse_json(args):
     # collect gender encodings
     nouns, verbs = get_space()
@@ -19,9 +42,8 @@ def parse_json(args):
     output = dict()
     human_count = dict()
     for image_name in data:
-        collect_human_action(image_name, human_count, human_verbs, man, woman, data, output)
+        collect_all_human_action(image_name, human_count, human_verbs, man, woman, data, output)
     print_stats(human_count, human_verbs)
-    print("Final sample count: {0}".format(len(output)))
         
     # write adjusted dataset
     with open(args.output_json, "w") as f:     

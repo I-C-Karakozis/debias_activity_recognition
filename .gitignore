@@ -6,4 +6,6 @@ venv
 models
 model_output
 resized_256
+stats
+
 baseline_models
