@@ -59,7 +59,6 @@ def __test(test_loader, classifier, discriminator, optimizer, layer_index, best_
     correct = 0
     total = 0
 
-    ckpt = 'adv.' + str(layer_index)
     for batch_idx, (index, inputs, domains) in enumerate(test_loader):
         domains = domains.squeeze(1)
         if use_gpu: 
@@ -82,12 +81,6 @@ def __test(test_loader, classifier, discriminator, optimizer, layer_index, best_
 
     acc = 100.*correct/total
     if acc > best_acc:
-        # print('Saving..')
-        # state = {
-        #     'net': discriminator.state_dict(),
-        #     'acc': acc,
-        # }
-        # torch.save(state, './checkpoint/' + ckpt)
         best_acc = acc
 
     return best_acc
