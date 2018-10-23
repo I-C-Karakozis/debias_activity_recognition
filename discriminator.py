@@ -153,10 +153,12 @@ def train_all(args):
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     plt.ioff()
-    plt.plot([i for i in range(len(best_accs))], a, '-o')
+    plt.plot([i for i in range(len(best_accs))], best_acc, '-o')
     plt.savefig("figures/discriminators_gender_cls_acc")
 
-# Sample execution: CUDA_VISIBLE_DEVICES=0 python discriminator.py model_output/encoder data/genders_train.json data/genders_test.json --weights_file models/best.pth.tar
+# Sample execution: 
+# CUDA_VISIBLE_DEVICES=1 python discriminator.py model_output/encoder data/balanced_genders_train.json data/balanced_genders_test.json --weights_file models/skewed_best.pth.tar
+# CUDA_VISIBLE_DEVICES=1 python discriminator.py model_output/encoder data/balanced_genders_train.json data/balanced_genders_test.json --weights_file models/balanced_best.pth.tar
 if __name__ == "__main__":
     parser = argparse.ArgumentParser('Train discriminator on network intermediate layers')
     parser.add_argument("encoding_file") 
@@ -171,4 +173,5 @@ if __name__ == "__main__":
 
     train_all(args)
 
+# skewed best_acc = [56.08108108108108, 55.990990990990994, 56.98198198198198, 61.03603603603604, 69.09909909909909, 69.09909909909909, 69.27927927927928, 68.82882882882883]
 # best_acc = [55.589534488617055, 62.249405368671425, 62.11348963642541, 65.83418280665987, 73.30954808019028, 72.08630648997621, 73.07169554875976, 72.579001019368]
