@@ -10,7 +10,10 @@ def plot_accuracy_per_activity(accuracies_per_activity, encoder, plot_name):
     indices_ordered = numpy.argsort(accuracies_per_activity)
     activities_ordered = [encoder.decode_verb(index) for index in indices_ordered]
     activity_acc_sorted = numpy.sort(accuracies_per_activity).tolist()
-    min_index = len(activity_acc_sorted) - activity_acc_sorted[::-1].index(-1)
+    if -1 in activity_acc_sorted:
+        min_index = len(activity_acc_sorted) - activity_acc_sorted[::-1].index(-1)
+    else:
+        min_index = 0
     shifted_indices = [i for i in range(0, len(activity_acc_sorted)-min_index)]
 
     plt.rcdefaults()
