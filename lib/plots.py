@@ -14,7 +14,8 @@ def plot_accuracy_per_activity(accuracies_per_activity, encoder):
 
     plt.rcdefaults()
     fig, ax = plt.subplots()
-    ax.barh(shifted_indices, activity_acc_sorted[min_index:], height=2.5)
+    fig.set_size_inches(37, 21)
+    ax.barh(shifted_indices, activity_acc_sorted[min_index:])
     plt.tick_params(axis='both', which='major', labelsize=8)
     plt.tick_params(axis='both', which='minor', labelsize=8)
     ax.set_yticks(shifted_indices)
