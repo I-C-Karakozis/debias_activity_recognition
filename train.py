@@ -175,8 +175,9 @@ def train():
     train_model(args.training_epochs, args.batch_size, dataloaders, model, optimizer)  
 
 # Sample execution: 
-# CUDA_VISIBLE_DEVICES=0 python train.py data/genders_train.json data/genders_dev.json --plot > model_output/logs
+# CUDA_VISIBLE_DEVICES=1 python train.py data/genders_train.json data/genders_dev.json --plot > model_output/logs
 # CUDA_VISIBLE_DEVICES=1 python train.py data/balanced_genders_train.json data/balanced_genders_dev.json --plot > model_output/logs
+# CUDA_VISIBLE_DEVICES=1 python train.py data/skewed_genders_train.json data/balanced_genders_dev.json --plot > model_output/logs
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train action recognition network.") 
     parser.add_argument("train_json") 
@@ -194,6 +195,12 @@ if __name__ == "__main__":
 
     train()
 
+
+# Skewed Model:
+
+# Train Set Size: 5848
+# Validation Set Size: 2212
+
 # Balanced Model:
 
 # Train Set Size: 5848
@@ -202,7 +209,7 @@ if __name__ == "__main__":
 # Training complete in 14m 21s
 # Best val Acc: 0.356691
 
-# Skewed Model:
+# Original Model:
 
 # Number of Verbs: 175
 # Train Set Size: 21538

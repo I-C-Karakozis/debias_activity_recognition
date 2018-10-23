@@ -10,8 +10,8 @@ def get_space():
     nouns = imsitu["nouns"]
     verbs = imsitu["verbs"]
 
-    print("Total verbs {0}".format(len(verbs)))
-    print("Total nouns {0}".format(len(nouns)))
+    # print("Total verbs {0}".format(len(verbs)))
+    # print("Total nouns {0}".format(len(nouns)))
 
     return nouns, verbs
 

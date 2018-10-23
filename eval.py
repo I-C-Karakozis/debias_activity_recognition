@@ -76,7 +76,9 @@ def evaluate():
 
 # Sample execution: 
 # CUDA_VISIBLE_DEVICES=1 python eval.py data/genders_test.json model_output/encoder skewed_model_skewed_test_acc_per_activity.png --weights_file models/best.pth.tar
+
 # CUDA_VISIBLE_DEVICES=1 python eval.py data/balanced_genders_test.json model_output/encoder balanced_model_balanced_test_acc_per_activity.png --weights_file models/balanced_best.pth.tar
+# CUDA_VISIBLE_DEVICES=1 python eval.py data/skewed_genders_test.json model_output/encoder balanced_model_skewed_test_acc_per_activity.png --weights_file models/balanced_best.pth.tar
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Test action recognition network.") 
     parser.add_argument("test_json") 

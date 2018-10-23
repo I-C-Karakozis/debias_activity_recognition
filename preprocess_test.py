@@ -46,12 +46,18 @@ def parse_json(args):
     #     print(output[k])
 
 # Sample execution: 
+
 # python preprocess_test.py data/human_verbs.txt data/test.json data/genders_test.json > stats/gender_test_stats.txt
+# python preprocess_test.py data/balanced_human_verbs.txt data/test.json data/skewed_genders_test.json > stats/skewed_gender_test_stats.txt
 # python preprocess_test.py data/balanced_human_verbs.txt data/test.json data/balanced_genders_test.json --balanced > stats/balanced_gender_test_stats.txt
+
 # python preprocess_test.py data/human_verbs.txt data/dev.json data/genders_dev.json > stats/gender_dev_stats.txt
+# python preprocess_test.py data/balanced_human_verbs.txt data/test.json data/skewed_genders_dev.json > stats/skewed_gender_dev_stats.txt
 # python preprocess_test.py data/balanced_human_verbs.txt data/dev.json data/balanced_genders_dev.json --balanced > stats/balanced_gender_dev_stats.txt
+
 # python preprocess_test.py data/human_verbs.txt data/concat_test.json data/genders_concat_test.json > stats/gender_concat_test_stats.txt
 # python preprocess_test.py data/balanced_human_verbs.txt data/concat_test.json data/balanced_genders_concat_test.json --balanced > stats/balanced_gender_concat_test_stats.txt
+
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Fetch all actions with man or woman agents.")
   parser.add_argument("human_verbs_txt", help="Txt file to get verbs of humans in action.")
@@ -62,16 +68,22 @@ if __name__ == "__main__":
 
   parse_json(args)
 
-# Results for Dev Set
-
-# Output with "both genders present" excluded: 
-# Original sample count: 25200
+# Orig Dev Set
 # Verbs: 175, Images with Man: 3283, Images with Woman: 2651
 # Final sample count: 5934
 
-# Results for Test Set
-
-# Output with "both genders present" excluded: 
-# Original sample count: 25200
+# Orig Test Set
 # Verbs: 175, Images with Man: 3377, Images with Woman: 2509
 # Final sample count: 5886
+
+# Balanced Dev Set
+# Verbs: 86, Images with Man: 1106, Images with Woman: 1106
+# Total Image Count: 2212
+
+# Balanced Test Set
+# Verbs: 86, Images with Man: 1110, Images with Woman: 1110
+# Total Image Count: 2220
+
+# Skewed Test Set
+# Verbs: 86, Images with Man: 1626, Images with Woman: 1379
+# Total Image Count: 3005
