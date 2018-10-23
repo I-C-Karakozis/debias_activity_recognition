@@ -1,11 +1,12 @@
 import numpy
+import os
 
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 plt.ioff()
 
-def plot_accuracy_per_activity(accuracies_per_activity, encoder):
+def plot_accuracy_per_activity(accuracies_per_activity, encoder, plot_name):
     indices_ordered = numpy.argsort(accuracies_per_activity)
     activities_ordered = [encoder.decode_verb(index) for index in indices_ordered]
     activity_acc_sorted = numpy.sort(accuracies_per_activity).tolist()
@@ -22,4 +23,4 @@ def plot_accuracy_per_activity(accuracies_per_activity, encoder):
     ax.set_yticklabels(activities_ordered[min_index:])
     ax.invert_yaxis()  # labels read top-to-bottom
     ax.set_xlabel('Activity Cls Accuracy')
-    plt.savefig("figures/acc_per_activity", dpi=200)
+    plt.savefig(os.path.join("figures", plot_name), dpi=200)

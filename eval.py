@@ -9,7 +9,7 @@ from lib import network, plots
 
 use_gpu = torch.cuda.is_available()
 
-def evaluate_model(dataloader, model, encoder): 
+def evaluate_model(dataloader, model, encoder, plot_name): 
     time_all = time.time()
     model.eval()
 
@@ -56,7 +56,7 @@ def evaluate_model(dataloader, model, encoder):
     for correct, count in zip(correct_per_activity, count_per_activity):
         if count > 0: accuracies_per_activity.append(correct / float(count))
         else: accuracies_per_activity.append(-1)
-    plots.plot_accuracy_per_activity(accuracies_per_activity, encoder)
+    plots.plot_accuracy_per_activity(accuracies_per_activity, encoder, plot_name)
     
 def evaluate():
     # load annotations
@@ -72,15 +72,16 @@ def evaluate():
     batch_size = args.batch_size 
     test_loader  = torch.utils.data.DataLoader(dataset_test, batch_size = batch_size, shuffle = False, num_workers = 3)
 
-    evaluate_model(test_loader, model, encoder)  
+    evaluate_model(test_loader, model, encoder, args.plot_name)  
 
 # Sample execution: 
-# CUDA_VISIBLE_DEVICES=0 python eval.py data/genders_test.json model_output/encoder --weights_file models/best.pth.tar
-# CUDA_VISIBLE_DEVICES=1 python eval.py data/balanced_genders_test.json model_output/encoder --weights_file models/best.pth.tar
+# CUDA_VISIBLE_DEVICES=0 python eval.py data/genders_test.json model_output/encoder skewed_model_skewed_test_acc_per_activity.png --weights_file models/best.pth.tar
+# CUDA_VISIBLE_DEVICES=1 python eval.py data/genders_test.json model_output/encoder skewed_model_skewed_test_acc_per_activity.png --weights_file models/best.pth.tar
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Test action recognition network.") 
     parser.add_argument("test_json") 
     parser.add_argument("encoding_file") 
+    parser.add_argument("plot_name", help="Name of plot file; it will be stored automatically in figures/plot_name") 
     parser.add_argument("--image_dir", default="./resized_256", help="location of images to process")
     parser.add_argument("--weights_file", help="the model to start from")
     parser.add_argument("--batch_size", default=64, help="batch size for training", type=int)
