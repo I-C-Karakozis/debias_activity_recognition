@@ -176,7 +176,7 @@ def train():
 
 # Sample execution: 
 # CUDA_VISIBLE_DEVICES=0 python train.py data/genders_train.json data/genders_dev.json --plot > model_output/logs
-# CUDA_VISIBLE_DEVICES=0 python train.py data/balanced_genders_train.json data/balanced_genders_dev.json --plot > model_output/logs
+# CUDA_VISIBLE_DEVICES=1 python train.py data/balanced_genders_train.json data/balanced_genders_dev.json --plot > model_output/logs
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train action recognition network.") 
     parser.add_argument("train_json") 
@@ -186,7 +186,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", default=64, help="batch size for training", type=int)
     parser.add_argument("--learning_rate", default=1e-5, help="learning rate for ADAM", type=float)
     parser.add_argument("--weight_decay", default=5e-4, help="learning rate decay for ADAM", type=float)  
-    parser.add_argument("--training_epochs", default=20, help="total number of training epochs", type=int)
+    parser.add_argument("--training_epochs", default=30, help="total number of training epochs", type=int)
     parser.add_argument("--binary", action='store_true', default=False, help="set to True to perform binary classification on genders")
     parser.add_argument("--plot", action='store_true', default=False, help="set to True to produce plots")
     parser.add_argument("--timing", action='store_true', default=False, help="set to True to time each pass through the network")
@@ -194,6 +194,19 @@ if __name__ == "__main__":
 
     train()
 
-# 40 epochs, overfitting after ~25 epochs of training
+# Balanced Model:
+
+# Train Set Size: 5848
+# Validation Set Size: 2212
+# val Loss: 2.7424 Acc: 0.3504
+# Training complete in 14m 21s
+# Best val Acc: 0.356691
+
+# Skewed Model:
+
+# Number of Verbs: 175
+# Train Set Size: 21538
+# Validation Set Size: 5934
+# Trained on 30 epochs, overfitting after ~25 epochs of training
 # Training complete in 66m 58s
 # Best val Acc: 0.346478
