@@ -148,8 +148,11 @@ def train():
     # load and encode annotations
     train_set = json.load(open(args.train_json))
     dev_set = json.load(open(args.dev_json))
-    encoder = imSituVerbRoleNounEncoder(train_set)
-    torch.save(encoder, "model_output/encoder")
+    if args.two_n:
+        encoder = imSitu2nClassEncoder(train_set)
+    else:
+        encoder = imSituVerbRoleNounEncoder(train_set)
+    torch.save(encoder, args.encoder)
 
     # load model
     model = network.load_classifier(args.weights_file, encoder, use_gpu)
@@ -158,15 +161,10 @@ def train():
     dataset_train = imSituSituation(args.image_dir, train_set, encoder, model.train_preprocess())
     print("Train Set Size: {}".format(len(dataset_train)))
     dataset_dev = imSituSituation(args.image_dir, dev_set, encoder, model.dev_preprocess())
-    print("Validation Set Size: {}".format(len(dataset_dev)))
-    
-    # setup gpus
-    ngpus = 1
-    device_array = [i for i in range(0,ngpus)]
-    batch_size = args.batch_size * ngpus  
+    print("Validation Set Size: {}".format(len(dataset_dev))) 
 
-    train_loader  = torch.utils.data.DataLoader(dataset_train, batch_size = batch_size, shuffle = True, num_workers = 3) 
-    dev_loader  = torch.utils.data.DataLoader(dataset_dev, batch_size = batch_size, shuffle = True, num_workers = 3) 
+    train_loader  = torch.utils.data.DataLoader(dataset_train, batch_size = args.batch_size, shuffle = True, num_workers = 3) 
+    dev_loader  = torch.utils.data.DataLoader(dataset_dev, batch_size = args.batch_size, shuffle = True, num_workers = 3) 
     dataloaders = {TRAIN: train_loader, VAL: dev_loader}
 
     # Adam optimization algorithm: Adaptive per parameter learning rate based on first and second gradient moments
@@ -178,10 +176,12 @@ def train():
 # CUDA_VISIBLE_DEVICES=1 python train.py data/genders_train.json data/genders_dev.json --plot > model_output/logs
 # CUDA_VISIBLE_DEVICES=1 python train.py data/balanced_genders_train.json data/balanced_genders_dev.json --plot > model_output/logs
 # CUDA_VISIBLE_DEVICES=1 python train.py data/skewed_genders_train.json data/balanced_genders_dev.json --plot > model_output/logs
+# CUDA_VISIBLE_DEVICES=1 python train.py data/activity_balanced_train.json data/activity_balanced_dev.json model_output/activity_balanced_encoder --two_n --plot > model_output/logs
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train action recognition network.") 
     parser.add_argument("train_json") 
-    parser.add_argument("dev_json")    
+    parser.add_argument("dev_json")   
+    parser.add_argument("encoder")   
     parser.add_argument("--image_dir", default="./resized_256", help="location of images to process")
     parser.add_argument("--weights_file", help="the model to start from")
     parser.add_argument("--batch_size", default=64, help="batch size for training", type=int)
@@ -191,6 +191,7 @@ if __name__ == "__main__":
     parser.add_argument("--binary", action='store_true', default=False, help="set to True to perform binary classification on genders")
     parser.add_argument("--plot", action='store_true', default=False, help="set to True to produce plots")
     parser.add_argument("--timing", action='store_true', default=False, help="set to True to time each pass through the network")
+    parser.add_argument("--two_n", action='store_true', default=False, help="set to True to train 2n-way classifier")
     args = parser.parse_args()        
 
     train()

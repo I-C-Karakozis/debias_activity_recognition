@@ -1,4 +1,4 @@
-# # install pip
+# install pip
 curl https://bootstrap.pypa.io/get-pip.py -o../get-pip.py
 python ../get-pip.py --user
 
@@ -33,6 +33,7 @@ python preprocess_test.py data/balanced_human_verbs.txt data/test.json data/skew
 python preprocess_test.py data/balanced_human_verbs.txt data/test.json data/balanced_genders_test.json --balanced > stats/balanced_gender_test_stats.txt
 
 python preprocess_test.py data/human_verbs.txt data/dev.json data/genders_dev.json > stats/gender_dev_stats.txt
+python preprocess_test.py data/activity_balanced_human_verbs.txt data/dev.json data/activity_balanced_dev.json > stats/activity_balanced_dev_stats.txt
 python preprocess_test.py data/balanced_human_verbs.txt data/dev.json data/balanced_genders_dev.json --balanced > stats/balanced_gender_dev_stats.txt
 python preprocess_test.py data/balanced_human_verbs.txt data/test.json data/skewed_genders_dev.json > stats/skewed_gender_dev_stats.txt
 

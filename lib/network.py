@@ -60,11 +60,11 @@ class resnet_modified_small(nn.Module):
 
         # setup encoder
         self.encoding = encoding
-        self.n_verbs = encoding.n_verbs()
+        self.n_classes = encoding.n_classes()
 
         # define layers
         self.linear = nn.Linear(7 * 7 * self.base_size(), self.rep_size())
-        self.cls = nn.Linear(self.rep_size(), self.n_verbs)
+        self.cls = nn.Linear(self.rep_size(), self.n_classes)
         self.dropout2d = nn.Dropout2d(.5)
         self.dropout = nn.Dropout(.5)
         self.relu = nn.LeakyReLU()

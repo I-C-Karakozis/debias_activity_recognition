@@ -5,6 +5,8 @@ import os
 
 from lib.imsitu_utils import *
 
+# TODO: restructure output directories
+
 # threshold used in the paper: 85 (resulting in 212 verbs)
 # if we remove images containing both men and women, we get 203 verbs
 THRESHOLD = 40

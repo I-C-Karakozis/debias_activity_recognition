@@ -7,6 +7,7 @@ import sys
  
 class imSituVerbRoleNounEncoder:
   
+  def n_classes(self): return len(self.v_id)
   def n_verbs(self): return len(self.v_id)
   def n_nouns(self): return len(self.n_id)
 
@@ -52,6 +53,36 @@ class imSituVerbRoleNounEncoder:
       # append encoded target label
       if gender_cls: label = _rv["agent"]
       else:          label = _rv["verb"]
+      rv.append(torch.LongTensor([label]))
+    return torch.cat(rv)
+
+class imSitu2nClassEncoder:
+
+  def __init__(self, dataset):
+    self.v_id = {}
+    self.id_v = {}
+
+    for (image, annotation) in dataset.items():
+      v = annotation["verb"] + "_" + annotation['frames'][0]['agent']
+      if v not in self.v_id: 
+        _id = len(self.v_id)
+        self.v_id[v] = _id
+        self.id_v[_id] = v
+   
+  def n_classes(self): 
+    return len(self.v_id)
+
+  def encode(self, situation):
+    return self.v_id[situation["verb"] + "_" + situation['frames'][0]['agent']]
+
+  def decode(self, v_id):
+    return self.id_v[v_id]
+
+  # produce a tensor of the batch of situations
+  def to_tensor(self, situations, gender_cls=False):
+    rv = []
+    for situation in situations:
+      label = self.encode(situation)
       rv.append(torch.LongTensor([label]))
     return torch.cat(rv)
 
