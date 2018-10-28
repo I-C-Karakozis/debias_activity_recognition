@@ -5,11 +5,9 @@ import os
 
 from lib.imsitu_utils import *
 
-# TODO: concatenate train and dev for evaluation
-
 # threshold used in the paper: 85 (resulting in 212 verbs)
 # if we remove images containing both men and women, we get 203 verbs
-THRESHOLD = 85 
+THRESHOLD = 40
 MIN_INSTANCES_PER_GENDER = 20
 
 SKEW_NUM = 3
@@ -30,6 +28,38 @@ def collect_dataset(data, man, woman, human_verbs, human_count, output_json):
     with open(args.human_verbs_txt, 'w') as f:
         for verb in human_verbs:
             f.write("%s\n" % verb)
+
+def prepare_activity_balanced_dataset(data, man, woman, human_count, output_json):
+    # find number of images per verb that maximizes number of train images
+    max_per_verb_image_count = 0; max_total_image_count = 0
+    for i in range(THRESHOLD, UPPERBOUND_CHECK):
+        # enforce same number of images per verb
+        human_verbs = [k for k in human_count if sum(human_count[k]) >= i and min(human_count[k]) >= MIN_INSTANCES_PER_GENDER]
+        current = i * len(human_verbs)
+
+        # print("Images per Activity", "Activities", "Total Images")
+        # print(i, len(human_verbs), current)
+        # print_border()
+
+        if current > max_total_image_count:
+            max_total_image_count = current
+            max_per_verb_image_count = i
+    print(max_total_image_count, max_per_verb_image_count)
+    human_verbs = [k for k in human_count if sum(human_count[k]) >= max_per_verb_image_count and min(human_count[k]) >= MIN_INSTANCES_PER_GENDER]
+
+    # measure skew per verb
+    man_skew = dict()
+    for verb in human_verbs:
+        man_skew[verb] = human_count[verb][0] / float(sum(human_count[verb]))
+
+    # enforce original skews per verb
+    skewed_human_count = dict()
+    for verb in human_verbs:
+        skewed_human_count[verb] = [0, 0]
+        skewed_human_count[verb][0] = round(max_per_verb_image_count * man_skew[verb]) 
+        skewed_human_count[verb][1] = max_per_verb_image_count - skewed_human_count[verb][0]
+    
+    collect_dataset(data, man, woman, human_verbs, skewed_human_count, output_json)
 
 def prepare_balanced_and_skewed_datasets(data, man, woman, human_count, output_json):
     for verb in human_count:
@@ -116,6 +146,9 @@ def prepare_balanced_and_skewed_datasets(data, man, woman, human_count, output_j
     collect_dataset(data, man, woman, human_verbs, skewed_human_count, skewed_output_json)
 
 def parse_json(args):
+
+    assert(not (args.balanced_and_skewed and args.activity_balanced))
+
     # collect gender encodings
     nouns, verbs = get_space()
     man = get_noun(nouns, MAN)
@@ -127,20 +160,24 @@ def parse_json(args):
     
     # collect datasets to form annotations for 
     if args.balanced_and_skewed:
-        datasets = prepare_balanced_and_skewed_datasets(data, man, woman, human_count, args.output_json)
+        prepare_balanced_and_skewed_datasets(data, man, woman, human_count, args.output_json)
+    elif args.activity_balanced:
+        prepare_activity_balanced_dataset(data, man, woman, human_count, args.output_json)
     else:
         human_verbs = [k for k in human_count if sum(human_count[k]) > THRESHOLD and min(human_count[k]) >= MIN_INSTANCES_PER_GENDER]
-        datasets = collect_dataset(data, man, woman, human_verbs, human_count, args.output_json)
+        collect_dataset(data, man, woman, human_verbs, human_count, args.output_json)
 
 # Sample execution: 
 # python preprocess_train.py data/train.json data/genders_train.json data/human_verbs.txt > stats/gender_train_stats.txt
 # python preprocess_train.py data/train.json data/genders_train.json data/balanced_human_verbs.txt --balanced_and_skewed > stats/balanced_gender_train_stats.txt
+# python preprocess_train.py data/train.json data/activity_balanced_train.json data/activity_balanced_human_verbs.txt --activity_balanced > stats/activity_balanced_train_stats.txt
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Fetch all actions with man or woman agents.") 
   parser.add_argument("data_json", help="Input dataset json to preprocess.") 
   parser.add_argument("output_json", help="Output dataset json to collect.")
   parser.add_argument("human_verbs_txt", help="Txt file to write verbs of humans in action.")
   parser.add_argument("--balanced_and_skewed", action='store_true', default=False, help="set to True to form balanced and skewed datasets")
+  parser.add_argument("--activity_balanced", action='store_true', default=False, help="set to True to form dataset with same number of images per activity")
   args = parser.parse_args()
 
   parse_json(args)

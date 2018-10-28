@@ -1,9 +1,9 @@
 # # install pip
-# curl https://bootstrap.pypa.io/get-pip.py -o../get-pip.py
-# python ../get-pip.py --user
+curl https://bootstrap.pypa.io/get-pip.py -o../get-pip.py
+python ../get-pip.py --user
 
-# # setup virtualenv
-# export PATH=$PATH:/u/ick/MACOSXFILES/Library/Python/2.7/bin
+# setup virtualenv
+export PATH=$PATH:/Users/ick/Library/Python/2.7/bin
 pip install virtualenv --user
 virtualenv venv 
 source venv/bin/activate
@@ -26,6 +26,7 @@ rm resized.tar
 # preprocess training data
 python preprocess_train.py data/train.json data/genders_train.json data/human_verbs.txt > stats/gender_train_stats.txt
 python preprocess_train.py data/train.json data/genders_train.json data/balanced_human_verbs.txt --balanced_and_skewed > stats/balanced_gender_train_stats.txt
+python preprocess_train.py data/train.json data/activity_balanced_train.json data/activity_balanced_human_verbs.txt --activity_balanced > stats/activity_balanced_train_stats.txt
 
 python preprocess_test.py data/human_verbs.txt data/test.json data/genders_test.json > stats/gender_test_stats.txt
 python preprocess_test.py data/balanced_human_verbs.txt data/test.json data/skewed_genders_test.json > stats/skewed_gender_test_stats.txt
