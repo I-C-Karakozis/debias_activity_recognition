@@ -1,5 +1,6 @@
 import argparse
 import json
+import os
 
 from lib.imsitu_utils import *
 
@@ -10,7 +11,8 @@ def parse_json(args):
     woman = get_noun(nouns, WOMAN)
 
     # get human verbs and data
-    human_verbs = open(args.human_verbs_txt).readlines()
+    human_verbs_txt = os.path.join("verbs", args.output_prefix+".txt")
+    human_verbs = open(human_verbs_txt).readlines()
     human_verbs = [verb.strip('\n') for verb in human_verbs]
     data = json.load(open(args.data_json))
     print("Original sample count: {0}".format(len(data)))
@@ -37,34 +39,26 @@ def parse_json(args):
         print_stats(human_count, human_verbs)
         
     # write adjusted dataset
-    with open(args.output_json, "w") as f:     
-        json.dump(output, f)        
-
-    # test what we wrote:
-    # output = json.load(open(args.output_json))
-    # for k in output:
-    #     print(output[k])
+    dataset = args.data_json.split("/")[-1]
+    with open(os.path.join("data", args.output_prefix+"_"+dataset), "w") as f:     
+        json.dump(output, f)
 
 # Sample execution: 
 
-# python preprocess_test.py data/human_verbs.txt data/test.json data/genders_test.json > stats/gender_test_stats.txt
-# python preprocess_test.py data/activity_balanced_human_verbs.txt data/test.json data/activity_balanced_test.json > stats/activity_balanced_test_stats.txt
-# python preprocess_test.py data/balanced_human_verbs.txt data/test.json data/skewed_genders_test.json > stats/skewed_gender_test_stats.txt
-# python preprocess_test.py data/balanced_human_verbs.txt data/test.json data/balanced_genders_test.json --balanced > stats/balanced_gender_test_stats.txt
+# python preprocess_test.py imsitu_data/test.json gender > stats/gender_test_stats.txt
+# python preprocess_test.py imsitu_data/test.json activity_balanced > stats/activity_balanced_test_stats.txt
+# python preprocess_test.py imsitu_data/test.json balanced_fixed_gender_ratio > stats/skewed_gender_test_stats.txt
+# python preprocess_test.py imsitu_data/test.json skewed_fixed_gender_ratio > stats/balanced_gender_test_stats.txt
 
-# python preprocess_test.py data/human_verbs.txt data/dev.json data/genders_dev.json > stats/gender_dev_stats.txt
-# python preprocess_test.py data/activity_balanced_human_verbs.txt data/dev.json data/activity_balanced_dev.json > stats/activity_balanced_dev_stats.txt
-# python preprocess_test.py data/balanced_human_verbs.txt data/test.json data/skewed_genders_dev.json > stats/skewed_gender_dev_stats.txt
-# python preprocess_test.py data/balanced_human_verbs.txt data/dev.json data/balanced_genders_dev.json --balanced > stats/balanced_gender_dev_stats.txt
-
-# python preprocess_test.py data/human_verbs.txt data/concat_test.json data/genders_concat_test.json > stats/gender_concat_test_stats.txt
-# python preprocess_test.py data/balanced_human_verbs.txt data/concat_test.json data/balanced_genders_concat_test.json --balanced > stats/balanced_gender_concat_test_stats.txt
+# python preprocess_test.py imsitu_data/dev.json gender > stats/gender_dev_stats.txt
+# python preprocess_test.py imsitu_data/dev.json activity_balanced > stats/activity_balanced_dev_stats.txt
+# python preprocess_test.py imsitu_data/dev.json balanced_fixed_gender_ratio > stats/skewed_gender_dev_stats.txt
+# python preprocess_test.py imsitu_data/dev.json skewed_fixed_gender_ratio > stats/balanced_gender_dev_stats.txt
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Fetch all actions with man or woman agents.")
-  parser.add_argument("human_verbs_txt", help="Txt file to get verbs of humans in action.")
   parser.add_argument("data_json", help="Input dataset json to preprocess.") 
-  parser.add_argument("output_json", help="Output dataset json to collect.")
+  parser.add_argument("output_prefix", help="Output dataset json to collect.")
   parser.add_argument("--balanced", action='store_true', default=False, help="set to True to form gender balanced dataset")
   args = parser.parse_args()
 

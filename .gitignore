@@ -3,9 +3,11 @@
 venv
 *.pyc
 
+data
 models
-enocders
+encoders
 resized_256
 stats
+verbs
 
 baseline_models

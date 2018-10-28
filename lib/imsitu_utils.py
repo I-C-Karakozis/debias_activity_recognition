@@ -6,7 +6,7 @@ WOMAN = "adult female"
 ################### Functions for Getting imSitu Elements ###################
 def get_space():
     # load imsitu space
-    imsitu = json.load(open("data/imsitu_space.json"))
+    imsitu = json.load(open("imsitu_data/imsitu_space.json"))
     nouns = imsitu["nouns"]
     verbs = imsitu["verbs"]
 
