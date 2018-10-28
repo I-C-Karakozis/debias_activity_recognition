@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import sys
 
 from lib.imsitu_utils import *
 
@@ -15,7 +16,6 @@ def parse_json(args):
     human_verbs = open(human_verbs_txt).readlines()
     human_verbs = [verb.strip('\n') for verb in human_verbs]
     data = json.load(open(args.data_json))
-    print("Original sample count: {0}".format(len(data)))
 
     # collect correct number of samples amnd activities
     output = dict()
@@ -29,13 +29,44 @@ def parse_json(args):
             if human_count[verb][0] > 0: updated_human_verbs.append(verb)
 
         # collect dataset annotations
+        sys.stdout = open(os.path.join("stats", args.output_prefix+"_"+args.data_json.split("/")[-1].split(".")[0]+".txt"), "w")
         print_stats(human_count, updated_human_verbs)
         for image_name in data:
-            collect_limited_human_activities(image_name, human_count, human_verbs, man, woman, data, output)        
+            collect_limited_human_activities(image_name, human_count, human_verbs, man, woman, data, output)
+
+    elif args.men_only:
+        human_count = count_human_activities(data, man, woman)
+        updated_human_verbs = []
+        for verb in human_verbs:
+            human_count[verb][1] = 0
+            if human_count[verb][0] > 0: updated_human_verbs.append(verb)
+
+        # collect dataset annotations
+        args.output_prefix += "_men"
+        sys.stdout = open(os.path.join("stats", args.output_prefix+"_"+args.data_json.split("/")[-1].split(".")[0]+".txt"), "w")
+        print_stats(human_count, updated_human_verbs)
+        for image_name in data:
+            collect_limited_human_activities(image_name, human_count, human_verbs, man, woman, data, output)         
+
+    elif args.women_only:
+        human_count = count_human_activities(data, man, woman)
+        updated_human_verbs = []
+        for verb in human_verbs:
+            human_count[verb][0] = 0
+            if human_count[verb][1] > 0: updated_human_verbs.append(verb)
+
+        # collect dataset annotations
+        args.output_prefix += "_women"
+        sys.stdout = open(os.path.join("stats", args.output_prefix+"_"+args.data_json.split("/")[-1].split(".")[0]+".txt"), "w")
+        print_stats(human_count, updated_human_verbs)
+        for image_name in data:
+            collect_limited_human_activities(image_name, human_count, human_verbs, man, woman, data, output)
+
     else:
         human_count = dict()
         for image_name in data:
             collect_all_human_activities(image_name, human_count, human_verbs, man, woman, data, output)
+        sys.stdout = open(os.path.join("stats", args.output_prefix+"_"+args.data_json.split("/")[-1].split(".")[0]+".txt"), "w")
         print_stats(human_count, human_verbs)
         
     # write adjusted dataset
@@ -45,21 +76,25 @@ def parse_json(args):
 
 # Sample execution: 
 
-# python preprocess_test.py imsitu_data/test.json gender > stats/gender_test_stats.txt
-# python preprocess_test.py imsitu_data/test.json activity_balanced > stats/activity_balanced_test_stats.txt
-# python preprocess_test.py imsitu_data/test.json balanced_fixed_gender_ratio > stats/skewed_gender_test_stats.txt
-# python preprocess_test.py imsitu_data/test.json skewed_fixed_gender_ratio > stats/balanced_gender_test_stats.txt
+# python preprocess_test.py imsitu_data/test.json gender 
+# python preprocess_test.py imsitu_data/test.json activity_balanced 
+# python preprocess_test.py imsitu_data/test.json activity_balanced --men_only 
+# python preprocess_test.py imsitu_data/test.json activity_balanced --women_only 
+# python preprocess_test.py imsitu_data/test.json balanced_fixed_gender_ratio 
+# python preprocess_test.py imsitu_data/test.json skewed_fixed_gender_ratio 
 
-# python preprocess_test.py imsitu_data/dev.json gender > stats/gender_dev_stats.txt
-# python preprocess_test.py imsitu_data/dev.json activity_balanced > stats/activity_balanced_dev_stats.txt
-# python preprocess_test.py imsitu_data/dev.json balanced_fixed_gender_ratio > stats/skewed_gender_dev_stats.txt
-# python preprocess_test.py imsitu_data/dev.json skewed_fixed_gender_ratio > stats/balanced_gender_dev_stats.txt
+# python preprocess_test.py imsitu_data/dev.json gender 
+# python preprocess_test.py imsitu_data/dev.json activity_balanced 
+# python preprocess_test.py imsitu_data/dev.json balanced_fixed_gender_ratio 
+# python preprocess_test.py imsitu_data/dev.json skewed_fixed_gender_ratio 
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Fetch all actions with man or woman agents.")
   parser.add_argument("data_json", help="Input dataset json to preprocess.") 
   parser.add_argument("output_prefix", help="Output dataset json to collect.")
   parser.add_argument("--balanced", action='store_true', default=False, help="set to True to form gender balanced dataset")
+  parser.add_argument("--men_only", action='store_true', default=False, help="set to True to collect only samples of men")
+  parser.add_argument("--women_only", action='store_true', default=False, help="set to True to collect only samples of women")
   args = parser.parse_args()
 
   parse_json(args)

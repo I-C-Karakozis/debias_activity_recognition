@@ -30,12 +30,16 @@ python preprocess_train.py imsitu_data/train.json gender > stats/gender_train_st
 python preprocess_train.py imsitu_data/train.json fixed_gender_ratio --balanced_and_skewed > stats/fixed_gender_ratio_train_stats.txt
 python preprocess_train.py imsitu_data/train.json activity_balanced --activity_balanced > stats/activity_balanced_train_stats.txt
 
-python preprocess_test.py imsitu_data/test.json gender > stats/gender_test_stats.txt
-python preprocess_test.py imsitu_data/test.json activity_balanced > stats/activity_balanced_test_stats.txt
-python preprocess_test.py imsitu_data/test.json balanced_fixed_gender_ratio > stats/skewed_gender_test_stats.txt
-python preprocess_test.py imsitu_data/test.json skewed_fixed_gender_ratio > stats/balanced_gender_test_stats.txt
+# preprocess test data
+python preprocess_test.py imsitu_data/test.json gender 
+python preprocess_test.py imsitu_data/test.json activity_balanced 
+python preprocess_test.py imsitu_data/test.json activity_balanced --men_only 
+python preprocess_test.py imsitu_data/test.json activity_balanced --women_only 
+python preprocess_test.py imsitu_data/test.json balanced_fixed_gender_ratio 
+python preprocess_test.py imsitu_data/test.json skewed_fixed_gender_ratio 
 
-python preprocess_test.py imsitu_data/dev.json gender > stats/gender_dev_stats.txt
-python preprocess_test.py imsitu_data/dev.json activity_balanced > stats/activity_balanced_dev_stats.txt
-python preprocess_test.py imsitu_data/dev.json balanced_fixed_gender_ratio > stats/skewed_gender_dev_stats.txt
-python preprocess_test.py imsitu_data/dev.json skewed_fixed_gender_ratio > stats/balanced_gender_dev_stats.txt
+# preprocess validation data
+python preprocess_test.py imsitu_data/dev.json gender 
+python preprocess_test.py imsitu_data/dev.json activity_balanced 
+python preprocess_test.py imsitu_data/dev.json balanced_fixed_gender_ratio 
+python preprocess_test.py imsitu_data/dev.json skewed_fixed_gender_ratio 

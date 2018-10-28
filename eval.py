@@ -43,7 +43,7 @@ def weigh_scores(scores, weights, encoder):
     return torch.FloatTensor(weighted_scores)
 
 def get_activity_label(labels, encoder):
-    return torch.Tensor([encoder.get_verb_id(label) for label in labels.data.numpy()])
+    return torch.Tensor([encoder.get_verb_id(label) for label in labels.cpu().numpy()])
 
 def evaluate_model(dataloader, model, encoder, weights=None): 
     time_all = time.time()
@@ -73,10 +73,10 @@ def evaluate_model(dataloader, model, encoder, weights=None):
         cls_scores = model(input_var)[-1]
         if args.prior_shift:
             # predict
-            weighted_scores = weigh_scores(cls_scores.data, weights, encoder)
+            weighted_scores = weigh_scores(cls_scores, weights, encoder)
             _, activity_gender_preds = torch.max(weighted_scores.data, 1) 
             preds = get_activity_label(activity_gender_preds, encoder)
-            targets = get_activity_label(target_var, encoder)  
+            targets = get_activity_label(target_var.data, encoder)  
 
             # update per class metrics
             for label, pred, orig_class in zip(targets, preds, target_var.data):
@@ -164,6 +164,12 @@ if __name__ == "__main__":
     args = parser.parse_args()        
 
     evaluate()
+
+# activity_balanced on activity_balanced
+# Accuracy: 0.277538
+# Mean Value Accuracy: 0.271523
+
+#----------------------------------------
 
 # Skewed Test Set Size: 5886
 # Orig Accuracy: 0.341148
