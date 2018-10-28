@@ -15,7 +15,6 @@ from lib.network import *
 from lib.imsitu  import *
 
 # TODO: parallelize
-# TODO: breakdown per gender and per activity
 use_gpu = torch.cuda.is_available()
 
 def __train(train_loader, classifier, discriminator, optimizer, layer_index):
@@ -124,7 +123,7 @@ def train_all(args):
     adv4 = Adversary(256 * 14 * 14)
     adv5 = Adversary(512 * 7 * 7)
     adv6 = Adversary(1024)
-    adv7 = Adversary(175)
+    adv7 = Adversary(86)
     advs = [adv0, adv1, adv2, adv3, adv4, adv5, adv6, adv7]
 
     # setup optimizers
@@ -153,7 +152,7 @@ def train_all(args):
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     plt.ioff()
-    plt.plot([i for i in range(len(best_accs))], best_acc, '-o')
+    plt.plot([i for i in range(len(best_accs))], best_accs, '-o')
     plt.savefig("figures/discriminators_gender_cls_acc")
 
 # Sample execution: 
