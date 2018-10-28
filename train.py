@@ -1,6 +1,7 @@
 import argparse
 import copy
 import json
+import os
 import time
 
 import torch
@@ -21,8 +22,6 @@ PHASES = [TRAIN, VAL]
 
 def train_model(max_epoch, batch_size, dataloaders, model, optimizer): 
     time_all = time.time()
-
-    # pmodel = torch.nn.DataParallel(model, device_ids=device_array)
     print_freq = 10
 
     # plot statistics
@@ -37,7 +36,8 @@ def train_model(max_epoch, batch_size, dataloaders, model, optimizer):
     best_val_epoch = 0
     best_model = copy.deepcopy(model.state_dict())
   
-    for epoch in range(0, max_epoch):  
+    for epoch in range(0, max_epoch): 
+        break 
         print('Epoch {}/{}'.format(epoch, max_epoch - 1))
         print('-' * 10)
 
@@ -140,19 +140,17 @@ def train_model(max_epoch, batch_size, dataloaders, model, optimizer):
         plt.title('Accuracy')
         plt.savefig("figures/accuracy")
 
-    # save models
-    torch.save(model.state_dict(), 'models/final.pth.tar')
-    torch.save(best_model, 'models/best.pth.tar')
+    torch.save(best_model, os.path.join("models", args.prefix+".pth.tar"))
 
 def train():
     # load and encode annotations
-    train_set = json.load(open(args.train_json))
-    dev_set = json.load(open(args.dev_json))
+    train_set = json.load(open(os.path.join("data", args.prefix+"_train.json")))
+    dev_set = json.load(open(os.path.join("data", args.prefix+"_dev.json")))
     if args.two_n:
         encoder = imSitu2nClassEncoder(train_set)
     else:
         encoder = imSituVerbRoleNounEncoder(train_set)
-    torch.save(encoder, args.encoder)
+    torch.save(encoder, os.path.join("encoders", args.prefix))
 
     # load model
     model = network.load_classifier(args.weights_file, encoder, use_gpu)
@@ -173,22 +171,19 @@ def train():
     train_model(args.training_epochs, args.batch_size, dataloaders, model, optimizer)  
 
 # Sample execution: 
-# CUDA_VISIBLE_DEVICES=1 python train.py data/genders_train.json data/genders_dev.json --plot > encoders/logs
-# CUDA_VISIBLE_DEVICES=1 python train.py data/balanced_genders_train.json data/balanced_genders_dev.json --plot > encoders/logs
-# CUDA_VISIBLE_DEVICES=1 python train.py data/skewed_genders_train.json data/balanced_genders_dev.json --plot > encoders/logs
-# CUDA_VISIBLE_DEVICES=1 python train.py data/activity_balanced_train.json data/activity_balanced_dev.json encoders/activity_balanced_encoder --two_n --plot > encoders/logs
+# CUDA_VISIBLE_DEVICES=1 python train.py gender --plot > encoders/logs
+# CUDA_VISIBLE_DEVICES=1 python train.py balanced_fixed_gender_ratio --plot > encoders/logs
+# CUDA_VISIBLE_DEVICES=1 python train.py skewed_fixed_gender_ratio --plot > encoders/logs
+# CUDA_VISIBLE_DEVICES=1 python train.py activity_balanced --two_n --plot > encoders/logs
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train action recognition network.") 
-    parser.add_argument("train_json") 
-    parser.add_argument("dev_json")   
-    parser.add_argument("encoder")   
+    parser.add_argument("prefix")    
     parser.add_argument("--image_dir", default="./resized_256", help="location of images to process")
     parser.add_argument("--weights_file", help="the model to start from")
     parser.add_argument("--batch_size", default=64, help="batch size for training", type=int)
     parser.add_argument("--learning_rate", default=1e-5, help="learning rate for ADAM", type=float)
     parser.add_argument("--weight_decay", default=5e-4, help="learning rate decay for ADAM", type=float)  
     parser.add_argument("--training_epochs", default=30, help="total number of training epochs", type=int)
-    parser.add_argument("--binary", action='store_true', default=False, help="set to True to perform binary classification on genders")
     parser.add_argument("--plot", action='store_true', default=False, help="set to True to produce plots")
     parser.add_argument("--timing", action='store_true', default=False, help="set to True to time each pass through the network")
     parser.add_argument("--two_n", action='store_true', default=False, help="set to True to train 2n-way classifier")
