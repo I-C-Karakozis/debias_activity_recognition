@@ -29,7 +29,9 @@ def initLinear(linear, val = None):
 def load_classifier(weights_file, encoder, use_gpu):
     '''Return resnet architecture'''
     classifier = resnet_modified_small(encoder)
-    if weights_file is not None: classifier.load_state_dict(torch.load(weights_file))
+    if weights_file is not None:
+        model_name = weights_file + ".pth.tar" 
+        classifier.load_state_dict(torch.load(model_name))
     if use_gpu: classifier.cuda()
 
     return classifier

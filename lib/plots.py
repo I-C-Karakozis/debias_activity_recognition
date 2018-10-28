@@ -6,6 +6,19 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 plt.ioff()
 
+def plot_train_statistics(prefix, epochs, train_loss, val_loss, train_acc, val_acc):
+    # Plot loss over time
+    plt.plot(epochs, train_loss, '-o', epochs, val_loss, '-o')
+    plt.title('Loss')
+    plt.savefig(os.path.join("figures", prefix+"_train_loss"))
+
+    plt.clf()
+
+    # plot accuracy over time
+    plt.plot(epochs, train_acc, '-o', epochs, val_acc, '-o')
+    plt.title('Accuracy')
+    plt.savefig(os.path.join("figures", prefix+"_train_accuracy"))
+
 def plot_accuracy_per_activity(accuracies_per_activity, encoder, plot_name):
     indices_ordered = numpy.argsort(accuracies_per_activity)
     activities_ordered = [encoder.decode_verb(index) for index in indices_ordered]

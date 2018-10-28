@@ -8,7 +8,7 @@ import torch
 from torch import optim
 
 from lib.imsitu import *
-from lib import network
+from lib import network, plots
 
 # TODO: label plots better
 
@@ -37,7 +37,6 @@ def train_model(max_epoch, batch_size, dataloaders, model, optimizer):
     best_model = copy.deepcopy(model.state_dict())
   
     for epoch in range(0, max_epoch): 
-        break 
         print('Epoch {}/{}'.format(epoch, max_epoch - 1))
         print('-' * 10)
 
@@ -115,30 +114,14 @@ def train_model(max_epoch, batch_size, dataloaders, model, optimizer):
             best_val_epoch = epoch
             best_model = copy.deepcopy(model.state_dict())
 
-    # Plot Summary
+    # Summary
     time_elapsed = time.time() - time_all
     print('Training complete in {:.0f}m {:.0f}s'.format(
         time_elapsed // 60, time_elapsed % 60))
     print('Best val Acc: {:4f}'.format(best_acc))
     
     if args.plot:
-        # setup plotting
-        import matplotlib
-        matplotlib.use('Agg')
-        import matplotlib.pyplot as plt
-        plt.ioff()
-
-        # Plot loss over time
-        plt.plot(epochs, train_loss, '-o', epochs, val_loss, '-o')
-        plt.title('Loss')
-        plt.savefig("figures/loss")
-
-        plt.clf()
-
-        # plot accuracy over time
-        plt.plot(epochs, train_acc, '-o', epochs, val_acc, '-o')
-        plt.title('Accuracy')
-        plt.savefig("figures/accuracy")
+        plots.plot_train_statistics(args.prefix, epochs, train_loss, val_loss, train_acc, val_acc)
 
     torch.save(best_model, os.path.join("models", args.prefix+".pth.tar"))
 
@@ -171,10 +154,10 @@ def train():
     train_model(args.training_epochs, args.batch_size, dataloaders, model, optimizer)  
 
 # Sample execution: 
-# CUDA_VISIBLE_DEVICES=1 python train.py gender --plot > encoders/logs
-# CUDA_VISIBLE_DEVICES=1 python train.py balanced_fixed_gender_ratio --plot > encoders/logs
-# CUDA_VISIBLE_DEVICES=1 python train.py skewed_fixed_gender_ratio --plot > encoders/logs
-# CUDA_VISIBLE_DEVICES=1 python train.py activity_balanced --two_n --plot > encoders/logs
+# CUDA_VISIBLE_DEVICES=1 python train.py gender --plot > logs
+# CUDA_VISIBLE_DEVICES=1 python train.py balanced_fixed_gender_ratio --plot > logs
+# CUDA_VISIBLE_DEVICES=1 python train.py skewed_fixed_gender_ratio --plot > logs
+# CUDA_VISIBLE_DEVICES=1 python train.py activity_balanced --two_n --plot > logs
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train action recognition network.") 
     parser.add_argument("prefix")    
@@ -195,8 +178,8 @@ if __name__ == "__main__":
 
 # Train Set Size: 15438
 # Validation Set Size: 6282
-# Training complete in 37m 28s
-# Best val Acc: 0.238300
+# Training complete in 37m 21s
+# Best val Acc: 0.240847
 
 # Skewed Model:
 

@@ -93,7 +93,12 @@ class imSitu2nClassEncoder:
   def decode(self, _id):
     return self.id_v[_id]
 
-  def get_activity_ids(self, _id):
+  def get_verb_id(self, _id):
+    v = self.id_v[_id]
+    verb = v.split('_')[0]
+    return self.verbs.index(verb)
+
+  def get_gender_ids_for_verb(self, _id):
     v = self.id_v[_id]
     verb = v.split('_')[0]
     activity_ids = [self.encode_verb_noun(verb, gender) for gender in self.genders]
