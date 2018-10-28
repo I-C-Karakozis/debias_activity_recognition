@@ -9,7 +9,8 @@ from lib.imsitu_utils import *
 
 # threshold used in the paper: 85 (resulting in 212 verbs)
 # if we remove images containing both men and women, we get 203 verbs
-THRESHOLD = 40
+THRESHOLD = 85
+2N_THRESHOLD = 40
 MIN_INSTANCES_PER_GENDER = 20
 
 SKEW_NUM = 3
@@ -34,7 +35,7 @@ def collect_dataset(data, man, woman, human_verbs, human_count, output_json):
 def prepare_activity_balanced_dataset(data, man, woman, human_count, output_json):
     # find number of images per verb that maximizes number of train images
     max_per_verb_image_count = 0; max_total_image_count = 0
-    for i in range(THRESHOLD, UPPERBOUND_CHECK):
+    for i in range(2N_THRESHOLD, UPPERBOUND_CHECK):
         # enforce same number of images per verb
         human_verbs = [k for k in human_count if sum(human_count[k]) >= i and min(human_count[k]) >= MIN_INSTANCES_PER_GENDER]
         current = i * len(human_verbs)

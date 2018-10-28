@@ -156,8 +156,8 @@ def train_all(args):
     plt.savefig("figures/discriminators_gender_cls_acc")
 
 # Sample execution: 
-# CUDA_VISIBLE_DEVICES=1 python discriminator.py model_output/encoder data/balanced_genders_train.json data/balanced_genders_test.json --weights_file models/skewed_best.pth.tar
-# CUDA_VISIBLE_DEVICES=1 python discriminator.py model_output/encoder data/balanced_genders_train.json data/balanced_genders_test.json --weights_file models/best.pth.tar
+# CUDA_VISIBLE_DEVICES=1 python discriminator.py encoders/encoder data/balanced_genders_train.json data/balanced_genders_test.json --weights_file models/skewed_best.pth.tar
+# CUDA_VISIBLE_DEVICES=1 python discriminator.py encoders/encoder data/balanced_genders_train.json data/balanced_genders_test.json --weights_file models/best.pth.tar
 if __name__ == "__main__":
     parser = argparse.ArgumentParser('Train discriminator on network intermediate layers')
     parser.add_argument("encoding_file") 

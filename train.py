@@ -173,10 +173,10 @@ def train():
     train_model(args.training_epochs, args.batch_size, dataloaders, model, optimizer)  
 
 # Sample execution: 
-# CUDA_VISIBLE_DEVICES=1 python train.py data/genders_train.json data/genders_dev.json --plot > model_output/logs
-# CUDA_VISIBLE_DEVICES=1 python train.py data/balanced_genders_train.json data/balanced_genders_dev.json --plot > model_output/logs
-# CUDA_VISIBLE_DEVICES=1 python train.py data/skewed_genders_train.json data/balanced_genders_dev.json --plot > model_output/logs
-# CUDA_VISIBLE_DEVICES=1 python train.py data/activity_balanced_train.json data/activity_balanced_dev.json model_output/activity_balanced_encoder --two_n --plot > model_output/logs
+# CUDA_VISIBLE_DEVICES=1 python train.py data/genders_train.json data/genders_dev.json --plot > encoders/logs
+# CUDA_VISIBLE_DEVICES=1 python train.py data/balanced_genders_train.json data/balanced_genders_dev.json --plot > encoders/logs
+# CUDA_VISIBLE_DEVICES=1 python train.py data/skewed_genders_train.json data/balanced_genders_dev.json --plot > encoders/logs
+# CUDA_VISIBLE_DEVICES=1 python train.py data/activity_balanced_train.json data/activity_balanced_dev.json encoders/activity_balanced_encoder --two_n --plot > encoders/logs
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train action recognition network.") 
     parser.add_argument("train_json") 
@@ -196,6 +196,13 @@ if __name__ == "__main__":
 
     train()
 
+# Activity Balanced Model
+
+# Train Set Size: 15438
+# Validation Set Size: 6282
+# Training complete in 37m 28s
+# Best val Acc: 0.238300
+
 # Skewed Model:
 
 # Train Set Size: 5848
@@ -205,7 +212,6 @@ if __name__ == "__main__":
 
 # Train Set Size: 5848
 # Validation Set Size: 2212
-# val Loss: 2.7424 Acc: 0.3504
 # Training complete in 14m 21s
 # Best val Acc: 0.356691
 

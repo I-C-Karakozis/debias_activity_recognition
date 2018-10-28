@@ -9,6 +9,17 @@ from lib import network, plots
 
 use_gpu = torch.cuda.is_available()
 
+def compute_weights(scores, encoder):
+    weighted_scores = []
+    for sample_scores in scores:
+        sample_weighted_scores = []
+        for i, score in enumerate(sample_scores):
+            ids = encoder.get_activity_ids(i)
+            weight = sum([sample_scores[_id] for _id in ids])
+            sample_weighted_scores.append(score / weight)
+        weighted_scores.append(sample_weighted_scores)
+    return torch.FloatTensor(weighted_scores)
+
 def evaluate_model(dataloader, model, encoder, plot_name): 
     time_all = time.time()
     model.eval()
@@ -17,9 +28,9 @@ def evaluate_model(dataloader, model, encoder, plot_name):
     running_corrects = 0
     mx = len(dataloader)
 
-    print(encoder.n_verbs())
-    correct_per_activity = [0 for i in range(encoder.n_verbs())]
-    count_per_activity = [0 for i in range(encoder.n_verbs())]
+    print(encoder.n_classes())
+    correct_per_activity = [0 for i in range(encoder.n_classes())]
+    count_per_activity = [0 for i in range(encoder.n_classes())]
 
     for i, (indexes, input, target) in enumerate(dataloader):
         if i % 10 == 0: print("batch {} out of {}\r".format(i+1,mx))
@@ -36,10 +47,14 @@ def evaluate_model(dataloader, model, encoder, plot_name):
             
         # evaluate
         cls_scores = model(input_var)[-1]
-        _, preds = torch.max(cls_scores.data, 1)                
+        if args.prior_shift:
+            weighted_scores = compute_weights(cls_scores.data, encoder)
+            _, preds = torch.max(weighted_scores, 1)
+        else:         
+            _, preds = torch.max(cls_scores.data, 1)       
         running_corrects += torch.sum(preds == target_var.data)
 
-        # update per activity metrics
+        # update per class metrics
         for label, pred in zip(target_var.data, preds):
             count_per_activity[label] = count_per_activity[label] + 1
             correct_per_activity[label] = correct_per_activity[label] + (label == pred)
@@ -51,12 +66,26 @@ def evaluate_model(dataloader, model, encoder, plot_name):
     accuracy = running_corrects / num_samples
     print('Accuracy: {:4f}'.format(accuracy))
 
-    # plot accuracy per activity
-    accuracies_per_activity = []
-    for correct, count in zip(correct_per_activity, count_per_activity):
-        if count > 0: accuracies_per_activity.append(correct / float(count))
-        else: accuracies_per_activity.append(-1)
-    plots.plot_accuracy_per_activity(accuracies_per_activity, encoder, plot_name)
+    if args.prior_shift:
+        mean_verb_acc = 0
+        for verb in encoder.verbs:
+            mean_gender_acc = 0
+            for gender in encoder.genders:
+                label = encoder.encode_verb_noun(verb, gender)
+                if count_per_activity[label] > 0:                    
+                    mean_gender_acc += correct_per_activity[label] / float(count_per_activity[label])
+                else:
+                    print(encoder.decode(label))
+            mean_verb_acc += mean_gender_acc / len(encoder.genders)
+        mean_verb_acc = mean_verb_acc / len(encoder.verbs)
+
+    else:
+        # plot accuracy per activity
+        accuracies_per_activity = []
+        for correct, count in zip(correct_per_activity, count_per_activity):
+            if count > 0: accuracies_per_activity.append(correct / float(count))
+            else: accuracies_per_activity.append(-1)
+        plots.plot_accuracy_per_activity(accuracies_per_activity, encoder, plot_name)
     
 def evaluate():
     # load annotations
@@ -74,14 +103,16 @@ def evaluate():
 
     evaluate_model(test_loader, model, encoder, args.plot_name)  
 
-# Sample execution: 
-# CUDA_VISIBLE_DEVICES=1 python eval.py data/genders_test.json model_output/encoder skewed_model_skewed_test_acc_per_activity.png --weights_file models/best.pth.tar
+# Sample execution:
 
-# CUDA_VISIBLE_DEVICES=1 python eval.py data/balanced_genders_test.json model_output/encoder balanced_model_balanced_test_acc_per_activity.png --weights_file models/best.pth.tar
-# CUDA_VISIBLE_DEVICES=1 python eval.py data/skewed_genders_test.json model_output/encoder balanced_model_skewed_test_acc_per_activity.png --weights_file models/best.pth.tar
+# CUDA_VISIBLE_DEVICES=1 python eval.py data/activity_balanced_test.json encoders/activity_balanced_encoder acc_per_activity_per_gender.png --prior_shift --weights_file models/activity_balanced_best.pth.tar
 
-# CUDA_VISIBLE_DEVICES=1 python eval.py data/balanced_genders_test.json model_output/encoder skewed_model_balanced_test_acc_per_activity.png --weights_file models/skewed_best.pth.tar
-# CUDA_VISIBLE_DEVICES=1 python eval.py data/skewed_genders_test.json model_output/encoder skewed_model_skewed_test_acc_per_activity.png --weights_file models/skewed_best.pth.tar
+# CUDA_VISIBLE_DEVICES=1 python eval.py data/balanced_genders_test.json encoders/encoder balanced_model_balanced_test_acc_per_activity.png --weights_file models/best.pth.tar
+# CUDA_VISIBLE_DEVICES=1 python eval.py data/skewed_genders_test.json encoders/encoder balanced_model_skewed_test_acc_per_activity.png --weights_file models/best.pth.tar
+
+# CUDA_VISIBLE_DEVICES=1 python eval.py data/balanced_genders_test.json encoders/encoder skewed_model_balanced_test_acc_per_activity.png --weights_file models/skewed_best.pth.tar
+# CUDA_VISIBLE_DEVICES=1 python eval.py data/skewed_genders_test.json encoders/encoder skewed_model_skewed_test_acc_per_activity.png --weights_file models/skewed_best.pth.tar
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Test action recognition network.") 
     parser.add_argument("test_json") 
@@ -90,6 +121,7 @@ if __name__ == "__main__":
     parser.add_argument("--image_dir", default="./resized_256", help="location of images to process")
     parser.add_argument("--weights_file", help="the model to start from")
     parser.add_argument("--batch_size", default=64, help="batch size for training", type=int)
+    parser.add_argument("--prior_shift", action='store_true', default=False, help="set to True to evaluate with prior prior_shift")
     args = parser.parse_args()        
 
     evaluate()

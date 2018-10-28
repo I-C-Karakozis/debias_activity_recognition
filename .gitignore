@@ -4,7 +4,7 @@ venv
 *.pyc
 
 models
-model_output
+enocders
 resized_256
 stats
 

@@ -37,7 +37,7 @@ class imSituVerbRoleNounEncoder:
     rv = {}
     rv["verb"]= self.v_id[situation["verb"]]
     rv["agent"] = self.n_id[situation['frames'][0]['agent']]
-    return rv   
+    return rv
 
   def decode_verb(self, v_id):
     return self.id_v[v_id]
@@ -62,12 +62,24 @@ class imSitu2nClassEncoder:
     self.v_id = {}
     self.id_v = {}
 
+    self.genders = []
+    self.verbs = []
+
     for (image, annotation) in dataset.items():
-      v = annotation["verb"] + "_" + annotation['frames'][0]['agent']
+      verb = annotation["verb"]
+      gender = annotation['frames'][0]['agent']
+      v = verb + "_" + gender
+
       if v not in self.v_id: 
         _id = len(self.v_id)
         self.v_id[v] = _id
         self.id_v[_id] = v
+
+      if verb not in self.verbs:
+        self.verbs.append(verb)
+
+      if gender not in self.genders:
+        self.genders.append(gender)
    
   def n_classes(self): 
     return len(self.v_id)
@@ -75,8 +87,17 @@ class imSitu2nClassEncoder:
   def encode(self, situation):
     return self.v_id[situation["verb"] + "_" + situation['frames'][0]['agent']]
 
-  def decode(self, v_id):
-    return self.id_v[v_id]
+  def encode_verb_noun(self, verb, noun):
+    return self.encode({'verb': verb, 'frames':[{'agent': noun}]})
+
+  def decode(self, _id):
+    return self.id_v[_id]
+
+  def get_activity_ids(self, _id):
+    v = self.id_v[_id]
+    verb = v.split('_')[0]
+    activity_ids = [self.encode_verb_noun(verb, gender) for gender in self.genders]
+    return activity_ids
 
   # produce a tensor of the batch of situations
   def to_tensor(self, situations, gender_cls=False):
