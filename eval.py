@@ -178,20 +178,20 @@ if __name__ == "__main__":
 # activity_balanced on activity_balanced
 # Verbs: 186, Images with Man: 3594, Images with Woman: 2661
 # Total Image Count: 6255
-# Accuracy: 0.277538
-# Mean Value Accuracy: 0.271523
+# Accuracy: 0.309832
+# Mean Value Accuracy: 0.292348
 
 # activity_balanced on activity_balanced_men
 # Verbs: 186, Images with Man: 3594, Images with Woman: 0
 # Total Image Count: 3594
-# Accuracy: 0.282972
-# Mean Value Accuracy: 0.271090
+# Accuracy: 0.308848
+# Mean Value Accuracy: 0.286332
 
 # activity_balanced on activity_balanced_women
 # Verbs: 186, Images with Man: 0, Images with Woman: 2661
 # Total Image Count: 2661
-# Accuracy: 0.271956
-# Mean Value Accuracy: 0.271523
+# Accuracy: Accuracy: 0.311161
+# Mean Value Accuracy: 0.298364
 
 #----------------------------------------
 # Prior Shift
