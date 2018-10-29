@@ -73,8 +73,11 @@ def evaluate_model(dataloader, model, encoder, weights=None):
         cls_scores = model(input_var)[-1]
         if args.two_n:
             # predict
-            if args.prior_shift: cls_scores = weigh_scores(cls_scores.data, weights, encoder)
-            _, activity_gender_preds = torch.max(cls_scores, 1) 
+            if args.prior_shift: 
+                cls_scores = weigh_scores(cls_scores.data, weights, encoder)
+                _, activity_gender_preds = torch.max(cls_scores, 1) 
+            else:
+                _, activity_gender_preds = torch.max(cls_scores.data, 1)
             preds = get_activity_label(activity_gender_preds, encoder)
             targets = get_activity_label(target_var.data, encoder)  
 
