@@ -71,10 +71,10 @@ def evaluate_model(dataloader, model, encoder, weights=None):
             
         # evaluate
         cls_scores = model(input_var)[-1]
-        if args.prior_shift:
+        if args.two_n:
             # predict
-            weighted_scores = weigh_scores(cls_scores.data, weights, encoder)
-            _, activity_gender_preds = torch.max(weighted_scores, 1) 
+            if args.prior_shift: cls_scores = weigh_scores(cls_scores.data, weights, encoder)
+            _, activity_gender_preds = torch.max(cls_scores, 1) 
             preds = get_activity_label(activity_gender_preds, encoder)
             targets = get_activity_label(target_var.data, encoder)  
 
@@ -116,7 +116,7 @@ def evaluate_model(dataloader, model, encoder, weights=None):
     mean_verb_acc = mean_verb_acc / len(encoder.verbs)
     print('Mean Value Accuracy: {:4f}'.format(mean_verb_acc))
 
-    if not args.prior_shift:
+    if not args.two_n:
         # plot accuracy per activity
         accuracies_per_activity = []
         for correct, count in zip(correct_per_activity, count_per_activity):
@@ -146,9 +146,13 @@ def evaluate():
 
 # Sample execution:
 
-# CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced --prior_shift --model activity_balanced
-# CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced_men --prior_shift --model activity_balanced
-# CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced_women --prior_shift --model activity_balanced
+# CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced --two_n --prior_shift --model activity_balanced
+# CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced_men --two_n --prior_shift --model activity_balanced
+# CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced_women --two_n --prior_shift --model activity_balanced
+
+# CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced --two_n --model activity_balanced
+# CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced_men --two_n --model activity_balanced
+# CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced_women --two_n --model activity_balanced
 
 # CUDA_VISIBLE_DEVICES=1 python eval.py balanced_fixed_gender_ratio --model balanced_fixed_gender_ratio
 # CUDA_VISIBLE_DEVICES=1 python eval.py skewed_fixed_gender_ratio --model balanced_fixed_gender_ratio
@@ -162,6 +166,7 @@ if __name__ == "__main__":
     parser.add_argument("--image_dir", default="./resized_256", help="location of images to process")
     parser.add_argument("--model", help="the model to start from")
     parser.add_argument("--batch_size", default=64, help="batch size for training", type=int)
+    parser.add_argument("--two_n", action='store_true', default=False, help="set for model trained on 2n classification")
     parser.add_argument("--prior_shift", action='store_true', default=False, help="set to True to evaluate with prior prior_shift")
     args = parser.parse_args()        
 
@@ -184,6 +189,28 @@ if __name__ == "__main__":
 # Total Image Count: 2661
 # Accuracy: 0.271956
 # Mean Value Accuracy: 0.271523
+
+#----------------------------------------
+# Prior Shift
+
+# activity_balanced on activity_balanced
+# Verbs: 186, Images with Man: 3594, Images with Woman: 2661
+# Total Image Count: 6255
+# Accuracy: 0.277538
+# Mean Value Accuracy: 0.271523
+
+# activity_balanced on activity_balanced_men
+# Verbs: 186, Images with Man: 3594, Images with Woman: 0
+# Total Image Count: 3594
+# Accuracy: 0.282972
+# Mean Value Accuracy: 0.271090
+
+# activity_balanced on activity_balanced_women
+# Verbs: 186, Images with Man: 0, Images with Woman: 2661
+# Total Image Count: 2661
+# Accuracy: 0.271956
+# Mean Value Accuracy: 0.271523
+
 #----------------------------------------
 
 # Skewed Test Set Size: 5886
