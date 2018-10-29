@@ -2,6 +2,7 @@ import argparse
 import copy
 import json
 import os
+import sys
 
 from lib.imsitu_utils import *
 
@@ -20,6 +21,7 @@ UPPERBOUND_CHECK = 200
 def collect_dataset(data, man, woman, human_verbs, human_count, output_prefix):
     # write adjusted dataset
     output = dict()
+    sys.stdout = open(os.path.join("stats", output_prefix+"_"+args.data_json.split("/")[-1].split(".")[0]+".txt"), "w")
     print_stats(human_count, human_verbs)
     for image_name in data:
         collect_limited_human_activities(image_name, human_count, human_verbs, man, woman, data, output)
@@ -165,9 +167,9 @@ def parse_json(args):
         collect_dataset(data, man, woman, human_verbs, human_count, args.output_prefix)
 
 # Sample execution: 
-# python preprocess_train.py imsitu_data/train.json gender > stats/gender_train_stats.txt
-# python preprocess_train.py imsitu_data/train.json fixed_gender_ratio --balanced_and_skewed > stats/fixed_gender_ratio_train_stats.txt
-# python preprocess_train.py imsitu_data/train.json activity_balanced --activity_balanced > stats/activity_balanced_train_stats.txt
+# python preprocess_train.py imsitu_data/train.json gender
+# python preprocess_train.py imsitu_data/train.json fixed_gender_ratio --balanced_and_skewed
+# python preprocess_train.py imsitu_data/train.json activity_balanced --activity_balanced
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Fetch all actions with man or woman agents.") 
   parser.add_argument("data_json", help="Input dataset json to preprocess.") 

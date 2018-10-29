@@ -26,9 +26,9 @@ mv of500_images_resized resized_256
 rm resized.tar
 
 # preprocess training data
-python preprocess_train.py imsitu_data/train.json gender > stats/gender_train_stats.txt
-python preprocess_train.py imsitu_data/train.json fixed_gender_ratio --balanced_and_skewed > stats/fixed_gender_ratio_train_stats.txt
-python preprocess_train.py imsitu_data/train.json activity_balanced --activity_balanced > stats/activity_balanced_train_stats.txt
+python preprocess_train.py imsitu_data/train.json gender
+python preprocess_train.py imsitu_data/train.json fixed_gender_ratio --balanced_and_skewed
+python preprocess_train.py imsitu_data/train.json activity_balanced --activity_balanced
 
 # preprocess test data
 python preprocess_test.py imsitu_data/test.json gender 

@@ -73,8 +73,8 @@ def evaluate_model(dataloader, model, encoder, weights=None):
         cls_scores = model(input_var)[-1]
         if args.prior_shift:
             # predict
-            weighted_scores = weigh_scores(cls_scores, weights, encoder)
-            _, activity_gender_preds = torch.max(weighted_scores.data, 1) 
+            weighted_scores = weigh_scores(cls_scores.data, weights, encoder)
+            _, activity_gender_preds = torch.max(weighted_scores, 1) 
             preds = get_activity_label(activity_gender_preds, encoder)
             targets = get_activity_label(target_var.data, encoder)  
 
@@ -102,21 +102,21 @@ def evaluate_model(dataloader, model, encoder, weights=None):
     accuracy = running_corrects / num_samples
     print('Accuracy: {:4f}'.format(accuracy))
 
-    if args.prior_shift:
-        mean_verb_acc = 0
-        for verb in encoder.verbs:
-            mean_gender_acc = 0
-            for gender in encoder.genders:
-                label = encoder.encode_verb_noun(verb, gender)
-                if count_per_activity[label] > 0:                    
-                    mean_gender_acc += correct_per_activity[label] / float(count_per_activity[label])
-                else:
-                    print(encoder.decode(label))
-            mean_verb_acc += mean_gender_acc / len(encoder.genders)
-        mean_verb_acc = mean_verb_acc / len(encoder.verbs)
-        print('Mean Value Accuracy: {:4f}'.format(mean_verb_acc))
+    # compute mean value accuracy
+    mean_verb_acc = 0
+    for verb in encoder.verbs:
+        mean_gender_acc = 0
+        for gender in encoder.genders:
+            label = encoder.encode_verb_noun(verb, gender)
+            if count_per_activity[label] > 0:                    
+                mean_gender_acc += correct_per_activity[label] / float(count_per_activity[label])
+            else:
+                print(encoder.decode(label))
+        mean_verb_acc += mean_gender_acc / len(encoder.genders)
+    mean_verb_acc = mean_verb_acc / len(encoder.verbs)
+    print('Mean Value Accuracy: {:4f}'.format(mean_verb_acc))
 
-    else:
+    if not args.prior_shift:
         # plot accuracy per activity
         accuracies_per_activity = []
         for correct, count in zip(correct_per_activity, count_per_activity):
@@ -127,7 +127,7 @@ def evaluate_model(dataloader, model, encoder, weights=None):
     
 def evaluate():
     # load model
-    encoder = torch.load(os.path.join("encoders", args.test_type))
+    encoder = torch.load(os.path.join("encoders", args.model))
     print("Number of Train Classes: {}".format(encoder.n_classes()))
     model = network.load_classifier(args.model, encoder, use_gpu)
 
@@ -138,7 +138,7 @@ def evaluate():
     test_loader  = torch.utils.data.DataLoader(dataset_test, batch_size = args.batch_size, shuffle = False, num_workers = 3)
 
     if args.prior_shift:
-        train_set = json.load(open(os.path.join("data", args.test_type+"_train.json")))
+        train_set = json.load(open(os.path.join("data", args.model+"_train.json")))
         weights = compute_train_distribution(train_set, encoder)
         evaluate_model(test_loader, model, encoder, weights) 
     else:
@@ -147,6 +147,8 @@ def evaluate():
 # Sample execution:
 
 # CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced --prior_shift --model activity_balanced
+# CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced_men --prior_shift --model activity_balanced
+# CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced_women --prior_shift --model activity_balanced
 
 # CUDA_VISIBLE_DEVICES=1 python eval.py balanced_fixed_gender_ratio --model balanced_fixed_gender_ratio
 # CUDA_VISIBLE_DEVICES=1 python eval.py skewed_fixed_gender_ratio --model balanced_fixed_gender_ratio
@@ -166,9 +168,22 @@ if __name__ == "__main__":
     evaluate()
 
 # activity_balanced on activity_balanced
+# Verbs: 186, Images with Man: 3594, Images with Woman: 2661
+# Total Image Count: 6255
 # Accuracy: 0.277538
 # Mean Value Accuracy: 0.271523
 
+# activity_balanced on activity_balanced_men
+# Verbs: 186, Images with Man: 3594, Images with Woman: 0
+# Total Image Count: 3594
+# Accuracy: 0.282972
+# Mean Value Accuracy: 0.271090
+
+# activity_balanced on activity_balanced_women
+# Verbs: 186, Images with Man: 0, Images with Woman: 2661
+# Total Image Count: 2661
+# Accuracy: 0.271956
+# Mean Value Accuracy: 0.271523
 #----------------------------------------
 
 # Skewed Test Set Size: 5886
