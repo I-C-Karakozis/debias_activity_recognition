@@ -11,10 +11,15 @@ from lib import imsitu_utils, network, plots
 use_gpu = torch.cuda.is_available()
 args = []
 
+def softmax(outputs):
+    for i, output in enumerate(outputs):
+        outputs[i] = torch.nn.Softmax(dim=-1)(output)
+    return outputs
+
 def compute_train_distribution(train_data, encoder):
     weights = [0 for i in range(encoder.n_classes())]
     for image_name in train_data:
-        image = data[image_name]
+        image = train_data[image_name]
         verb = image["verb"]
         agents = imsitu_utils.get_agents(image)
         assert(len(agents) == 1)
@@ -23,23 +28,23 @@ def compute_train_distribution(train_data, encoder):
 
     return weights
 
-def weigh_and_sum_scores(scores, weights, encoder):    
-    # weigh by gender
+def weigh_scores(scores, weights, encoder):    
     weighted_scores = []
     for sample_scores in scores:
         sample_weighted_scores = [s / w for s,w in zip(sample_scores, weights)]
         weighted_scores.append(sample_weighted_scores)
+    return weighted_scores
 
-    # aggregate per verb
-    for j, cls_scores in enumerate(weighted_scores):
-        aggregate_weighted_scores = []
-        for i, weighted_score in enumerate(cls_scores):
+def aggregate_scores_per_verb(weighted_scores, encoder)
+    aggregated_weighted_scores = []
+    for j, sample_scores in enumerate(weighted_scores):
+        aggregate_sample_scores = []
+        for i, _ in enumerate(sample_scores):
             ids = encoder.get_gender_ids_for_verb(i)
-            weight = sum([cls_scores[_id] for _id in ids])
-            aggregate_weighted_scores.append(weight)
-        weighted_scores[j] = aggregate_weighted_scores
-
-    return torch.FloatTensor(weighted_scores)
+            verb_score = sum([sample_scores[_id] for _id in ids])
+            aggregate_sample_scores.append(verb_score)
+        aggregated_weighted_scores.append(aggregate_sample_scores)
+    return torch.FloatTensor(aggregate_weighted_scores)
 
 def get_activity_label(labels, encoder):
     return torch.Tensor([encoder.get_verb_id(label) for label in labels.cpu().numpy()])
@@ -72,11 +77,15 @@ def evaluate_model(dataloader, model, encoder, weights=None):
         cls_scores = model(input_var)[-1]
         if args.two_n:
             # predict
+            cls_scores = softmax(cls_scores)
             if args.weighted_inference: 
-                cls_scores = weigh_and_sum_scores(cls_scores.data, weights, encoder)
-                _, activity_gender_preds = torch.max(cls_scores, 1) 
+                weighted_cls_scores = weigh_scores(cls_scores.data, weights, encoder)
+                aggregate_cls_scores = aggregate_scores_per_verb(weighted_cls_scores, encoder)
+                _, activity_gender_preds = torch.max(aggregate_cls_scores, 1) 
             else:
                 _, activity_gender_preds = torch.max(cls_scores.data, 1)
+
+            # collect activity labels and predictions
             preds = get_activity_label(activity_gender_preds, encoder)
             targets = get_activity_label(target_var.data, encoder)  
 
