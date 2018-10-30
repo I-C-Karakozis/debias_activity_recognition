@@ -128,10 +128,12 @@ def train():
     train_set = json.load(open(os.path.join("data", args.prefix+"_train.json")))
     dev_set = json.load(open(os.path.join("data", args.prefix+"_dev.json")))
     if args.two_n:
+        args.prefix += "_2n"
         encoder = imSitu2nClassEncoder(train_set)
     else:
+        args.prefix += "_baseline"
         encoder = imSituVerbRoleNounEncoder(train_set)
-    torch.save(encoder, os.path.join("encoders", args.prefix))
+    torch.save(encoder, os.path.join("encoders", args.prefix+"_baseline"))
 
     # load model
     model = network.load_classifier(args.weights_file, encoder, use_gpu)
@@ -156,6 +158,7 @@ def train():
 # CUDA_VISIBLE_DEVICES=1 python train.py balanced_fixed_gender_ratio --plot > logs
 # CUDA_VISIBLE_DEVICES=1 python train.py skewed_fixed_gender_ratio --plot > logs
 # CUDA_VISIBLE_DEVICES=1 python train.py activity_balanced --two_n --plot > logs
+# CUDA_VISIBLE_DEVICES=1 python train.py activity_balanced --plot > logs
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train action recognition network.") 
     parser.add_argument("prefix")    
