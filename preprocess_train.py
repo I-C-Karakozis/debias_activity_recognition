@@ -6,8 +6,6 @@ import sys
 
 from lib.imsitu_utils import *
 
-# TODO: restructure output directories
-
 # threshold used in the paper: 85 (resulting in 212 verbs)
 # if we remove images containing both men and women, we get 203 verbs
 THRESHOLD = 85
@@ -49,7 +47,7 @@ def prepare_activity_balanced_dataset(data, man, woman, human_count, output_pref
         if current > max_total_image_count:
             max_total_image_count = current
             max_per_verb_image_count = i
-    print(max_total_image_count, max_per_verb_image_count)
+    # print(max_total_image_count, max_per_verb_image_count)
     human_verbs = [k for k in human_count if sum(human_count[k]) >= max_per_verb_image_count and min(human_count[k]) >= MIN_INSTANCES_PER_GENDER]
 
     # measure skew per verb
@@ -155,6 +153,7 @@ def parse_json(args):
     # collect human activities
     data = json.load(open(args.data_json))
     human_count = count_human_activities(data, man, woman)
+    print(len([k for k in human_count if min(human_count[k]) >= MIN_INSTANCES_PER_GENDER])); exit()
     
     # collect datasets to form annotations for 
     assert(not (args.balanced_and_skewed and args.activity_balanced))

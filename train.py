@@ -10,8 +10,6 @@ from torch import optim
 from lib.imsitu import *
 from lib import network, plots
 
-# TODO: label plots better
-
 use_gpu = torch.cuda.is_available()
 device_array = []
 args = []

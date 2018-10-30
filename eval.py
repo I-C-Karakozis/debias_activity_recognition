@@ -73,7 +73,7 @@ def evaluate_model(dataloader, model, encoder, weights=None):
         cls_scores = model(input_var)[-1]
         if args.two_n:
             # predict
-            if args.prior_shift: 
+            if args.weighted_inference: 
                 cls_scores = weigh_scores(cls_scores.data, weights, encoder)
                 _, activity_gender_preds = torch.max(cls_scores, 1) 
             else:
@@ -140,7 +140,7 @@ def evaluate():
     print("Test Set Size: {}".format(len(dataset_test)))
     test_loader  = torch.utils.data.DataLoader(dataset_test, batch_size = args.batch_size, shuffle = False, num_workers = 3)
 
-    if args.prior_shift:
+    if args.weighted_inference:
         train_set = json.load(open(os.path.join("data", args.model+"_train.json")))
         weights = compute_train_distribution(train_set, encoder)
         evaluate_model(test_loader, model, encoder, weights) 
@@ -149,9 +149,9 @@ def evaluate():
 
 # Sample execution:
 
-# CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced --two_n --prior_shift --model activity_balanced
-# CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced_men --two_n --prior_shift --model activity_balanced
-# CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced_women --two_n --prior_shift --model activity_balanced
+# CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced --two_n --weighted_inference --model activity_balanced
+# CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced_men --two_n --weighted_inference --model activity_balanced
+# CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced_women --two_n --weighted_inference --model activity_balanced
 
 # CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced --two_n --model activity_balanced
 # CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced_men --two_n --model activity_balanced
@@ -170,51 +170,10 @@ if __name__ == "__main__":
     parser.add_argument("--model", help="the model to start from")
     parser.add_argument("--batch_size", default=64, help="batch size for training", type=int)
     parser.add_argument("--two_n", action='store_true', default=False, help="set for model trained on 2n classification")
-    parser.add_argument("--prior_shift", action='store_true', default=False, help="set to True to evaluate with prior prior_shift")
+    parser.add_argument("--weighted_inference", action='store_true', default=False, help="set to True to evaluate with prior weighted_inference")
     args = parser.parse_args()        
 
     evaluate()
-
-# activity_balanced on activity_balanced
-# Verbs: 186, Images with Man: 3594, Images with Woman: 2661
-# Total Image Count: 6255
-# Accuracy: 0.309832
-# Mean Value Accuracy: 0.292348
-
-# activity_balanced on activity_balanced_men
-# Verbs: 186, Images with Man: 3594, Images with Woman: 0
-# Total Image Count: 3594
-# Accuracy: 0.308848
-# Mean Value Accuracy: 0.286332
-
-# activity_balanced on activity_balanced_women
-# Verbs: 186, Images with Man: 0, Images with Woman: 2661
-# Total Image Count: 2661
-# Accuracy: Accuracy: 0.311161
-# Mean Value Accuracy: 0.298364
-
-#----------------------------------------
-# Prior Shift
-
-# activity_balanced on activity_balanced
-# Verbs: 186, Images with Man: 3594, Images with Woman: 2661
-# Total Image Count: 6255
-# Accuracy: 0.277538
-# Mean Value Accuracy: 0.271523
-
-# activity_balanced on activity_balanced_men
-# Verbs: 186, Images with Man: 3594, Images with Woman: 0
-# Total Image Count: 3594
-# Accuracy: 0.282972
-# Mean Value Accuracy: 0.271090
-
-# activity_balanced on activity_balanced_women
-# Verbs: 186, Images with Man: 0, Images with Woman: 2661
-# Total Image Count: 2661
-# Accuracy: 0.271956
-# Mean Value Accuracy: 0.271523
-
-#----------------------------------------
 
 # Skewed Test Set Size: 5886
 # Orig Accuracy: 0.341148
