@@ -11,18 +11,19 @@ from lib import imsitu_utils, network, plots
 use_gpu = torch.cuda.is_available()
 args = []
 
-def compute_train_distribution(data, encoder):
+def compute_train_distribution(train_data, encoder):
     weights = [0 for i in range(encoder.n_classes())]
-    for image_name in data:
+    for image_name in train_data:
         image = data[image_name]
         verb = image["verb"]
         agents = imsitu_utils.get_agents(image)
         assert(len(agents) == 1)
         class_id = encoder.encode_verb_noun(verb, agents[0])
         weights[class_id] += 1
+
     return weights
 
-def weigh_scores(scores, weights, encoder):    
+def weigh_and_sum_scores(scores, weights, encoder):    
     # weigh by gender
     weighted_scores = []
     for sample_scores in scores:
@@ -34,10 +35,8 @@ def weigh_scores(scores, weights, encoder):
         aggregate_weighted_scores = []
         for i, weighted_score in enumerate(cls_scores):
             ids = encoder.get_gender_ids_for_verb(i)
-            assert(len(ids)==2)
             weight = sum([cls_scores[_id] for _id in ids])
             aggregate_weighted_scores.append(weight)
-            cls_scores[ids[1]] = 0
         weighted_scores[j] = aggregate_weighted_scores
 
     return torch.FloatTensor(weighted_scores)
@@ -53,8 +52,8 @@ def evaluate_model(dataloader, model, encoder, weights=None):
     running_corrects = 0
     mx = len(dataloader)
 
-    correct_per_activity = [0 for i in range(encoder.n_classes())]
-    count_per_activity = [0 for i in range(encoder.n_classes())]
+    correct_per_class = [0 for i in range(encoder.n_classes())]
+    count_per_class = [0 for i in range(encoder.n_classes())]
 
     for i, (indexes, input, target) in enumerate(dataloader):
         if i % 10 == 0: print("batch {} out of {}\r".format(i+1,mx))
@@ -74,7 +73,7 @@ def evaluate_model(dataloader, model, encoder, weights=None):
         if args.two_n:
             # predict
             if args.weighted_inference: 
-                cls_scores = weigh_scores(cls_scores.data, weights, encoder)
+                cls_scores = weigh_and_sum_scores(cls_scores.data, weights, encoder)
                 _, activity_gender_preds = torch.max(cls_scores, 1) 
             else:
                 _, activity_gender_preds = torch.max(cls_scores.data, 1)
@@ -83,8 +82,8 @@ def evaluate_model(dataloader, model, encoder, weights=None):
 
             # update per class metrics
             for label, pred, orig_class in zip(targets, preds, target_var.data):
-                count_per_activity[orig_class] = count_per_activity[orig_class] + 1
-                correct_per_activity[orig_class] = correct_per_activity[orig_class] + (label == pred)           
+                count_per_class[orig_class] = count_per_class[orig_class] + 1
+                correct_per_class[orig_class] = correct_per_class[orig_class] + (label == pred)           
         else:         
             # predict
             _, preds = torch.max(cls_scores.data, 1) 
@@ -92,8 +91,8 @@ def evaluate_model(dataloader, model, encoder, weights=None):
 
             # update per class metrics
             for label, pred in zip(targets, preds):
-                count_per_activity[label] = count_per_activity[label] + 1
-                correct_per_activity[label] = correct_per_activity[label] + (label == pred)   
+                count_per_class[label] = count_per_class[label] + 1
+                correct_per_class[label] = correct_per_class[label] + (label == pred)   
 
         # update aggregate metrics 
         running_corrects += torch.sum(preds == targets)
@@ -106,27 +105,27 @@ def evaluate_model(dataloader, model, encoder, weights=None):
     print('Accuracy: {:4f}'.format(accuracy))
 
     # compute mean value accuracy
-    mean_verb_acc = 0
+    mean_per_class_acc = 0
     for verb in encoder.verbs:
         mean_gender_acc = 0
         for gender in encoder.genders:
             label = encoder.encode_verb_noun(verb, gender)
-            if count_per_activity[label] > 0:                    
-                mean_gender_acc += correct_per_activity[label] / float(count_per_activity[label])
+            if count_per_class[label] > 0:                    
+                mean_gender_acc += correct_per_class[label] / float(count_per_class[label])
             else:
                 print(encoder.decode(label))
-        mean_verb_acc += mean_gender_acc / len(encoder.genders)
-    mean_verb_acc = mean_verb_acc / len(encoder.verbs)
-    print('Mean Value Accuracy: {:4f}'.format(mean_verb_acc))
+        mean_per_class_acc += mean_gender_acc / len(encoder.genders)
+    mean_per_class_acc = mean_per_class_acc / len(encoder.verbs)
+    print('Mean Value Accuracy: {:4f}'.format(mean_per_class_acc))
 
     if not args.two_n:
         # plot accuracy per activity
-        accuracies_per_activity = []
-        for correct, count in zip(correct_per_activity, count_per_activity):
-            if count > 0: accuracies_per_activity.append(correct / float(count))
-            else: accuracies_per_activity.append(-1)
+        accuracies_per_class = []
+        for correct, count in zip(correct_per_class, count_per_class):
+            if count > 0: accuracies_per_class.append(correct / float(count))
+            else: accuracies_per_class.append(-1)
         plot_name = args.test_type + "_acc_per_class.png"
-        plots.plot_accuracy_per_activity(accuracies_per_activity, encoder, plot_name)
+        plots.plot_accuracy_per_class(accuracies_per_class, encoder, plot_name)
     
 def evaluate():
     # load model
@@ -138,7 +137,7 @@ def evaluate():
     test_set = json.load(open(os.path.join("data", args.test_type+"_test.json")))
     dataset_test = imSituSituation(args.image_dir, test_set, encoder, model.test_preprocess())
     print("Test Set Size: {}".format(len(dataset_test)))
-    test_loader  = torch.utils.data.DataLoader(dataset_test, batch_size = args.batch_size, shuffle = False, num_workers = 3)
+    test_loader  = torch.utils.data.DataLoader(dataset_test, batch_size=args.batch_size, shuffle=False, num_workers=3)
 
     if args.weighted_inference:
         train_set = json.load(open(os.path.join("data", args.model+"_train.json")))

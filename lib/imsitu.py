@@ -102,6 +102,7 @@ class imSitu2nClassEncoder:
     v = self.id_v[_id]
     verb = v.split('_')[0]
     activity_ids = [self.encode_verb_noun(verb, gender) for gender in self.genders]
+    assert(len(activity_ids) == 2)
     return activity_ids
 
   # produce a tensor of the batch of situations
