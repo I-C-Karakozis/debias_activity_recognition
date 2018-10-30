@@ -153,7 +153,6 @@ def parse_json(args):
     # collect human activities
     data = json.load(open(args.data_json))
     human_count = count_human_activities(data, man, woman)
-    print(len([k for k in human_count if min(human_count[k]) >= MIN_INSTANCES_PER_GENDER])); exit()
     
     # collect datasets to form annotations for 
     assert(not (args.balanced_and_skewed and args.activity_balanced))

@@ -45,14 +45,14 @@ def train_model(max_epoch, batch_size, dataloaders, model, optimizer):
             else:
                 model.eval()
 
-            epoch_steps = 0.0
-            num_samples = 0.0
-            running_loss = 0.0
+            epoch_steps = 0
+            num_samples = 0
+            running_loss = 0
             running_corrects = 0
             train_loss_total = 0
 
             for i, (index, input, target) in enumerate(dataloaders[phase]): 
-                epoch_steps += 1.0
+                epoch_steps += 1
                 num_samples += target.size()[0]
 
                 t0 = time.time()
@@ -82,19 +82,19 @@ def train_model(max_epoch, batch_size, dataloaders, model, optimizer):
                     if args.timing: print "backward time = {}".format(time.time() - t1)
                         
                 # update epoch statistics
-                running_loss += loss.data[0]
+                running_loss += loss.item()
                 running_corrects += torch.sum(preds == target_var.data)
                 
                 # print stats for training
                 if epoch_steps % print_freq == 0:
                     avg_loss = running_loss / (epoch_steps)
                     batch_time = (time.time() - time_all)/ (epoch_steps)
-                    print "{} phase: {},{} loss = {:.2f}, avg loss = {:.2f}, batch time = {:.2f}".format(phase, epoch_steps-1, epoch, loss.data[0], avg_loss, batch_time)
+                    print "{} phase: {},{} loss = {:.2f}, avg loss = {:.2f}, batch time = {:.2f}".format(phase, epoch_steps-1, epoch, loss.item(), avg_loss, batch_time)
                     print('-' * 10)
 
             # print epoch stats
-            epoch_loss = running_loss / epoch_steps
-            epoch_acc = running_corrects / num_samples
+            epoch_loss = running_loss / float(epoch_steps)
+            epoch_acc = running_corrects.item() / float(num_samples)
             print('{} Loss: {:.4f} Acc: {:.4f}'.format(phase, epoch_loss, epoch_acc))
 
             # prepare plots

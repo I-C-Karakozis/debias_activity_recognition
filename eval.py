@@ -35,7 +35,7 @@ def weigh_scores(scores, weights, encoder):
         weighted_scores.append(sample_weighted_scores)
     return weighted_scores
 
-def aggregate_scores_per_verb(weighted_scores, encoder)
+def aggregate_scores_per_verb(weighted_scores, encoder):
     aggregated_weighted_scores = []
     for j, sample_scores in enumerate(weighted_scores):
         aggregate_sample_scores = []
@@ -43,7 +43,7 @@ def aggregate_scores_per_verb(weighted_scores, encoder)
             ids = encoder.get_gender_ids_for_verb(i)
             verb_score = sum([sample_scores[_id] for _id in ids])
             aggregate_sample_scores.append(verb_score)
-        aggregated_weighted_scores.append(aggregate_sample_scores)
+        aggregated_weighted_scores.append(aggregated_sample_scores)
     return torch.FloatTensor(aggregate_weighted_scores)
 
 def get_activity_label(labels, encoder):
@@ -104,7 +104,7 @@ def evaluate_model(dataloader, model, encoder, weights=None):
                 correct_per_class[label] = correct_per_class[label] + (label == pred)   
 
         # update aggregate metrics 
-        running_corrects += torch.sum(preds == targets)
+        running_corrects += torch.sum(preds == targets).item()
 
     # Output Summary
     time_elapsed = time.time() - time_all
