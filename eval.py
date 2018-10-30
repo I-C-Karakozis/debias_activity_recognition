@@ -43,8 +43,8 @@ def aggregate_scores_per_verb(weighted_scores, encoder):
             ids = encoder.get_gender_ids_for_verb(i)
             verb_score = sum([sample_scores[_id] for _id in ids])
             aggregate_sample_scores.append(verb_score)
-        aggregated_weighted_scores.append(aggregated_sample_scores)
-    return torch.FloatTensor(aggregate_weighted_scores)
+        aggregated_weighted_scores.append(aggregate_sample_scores)
+    return torch.FloatTensor(aggregated_weighted_scores)
 
 def get_activity_label(labels, encoder):
     return torch.Tensor([encoder.get_verb_id(label) for label in labels.cpu().numpy()])
@@ -92,7 +92,7 @@ def evaluate_model(dataloader, model, encoder, weights=None):
             # update per class metrics
             for label, pred, orig_class in zip(targets, preds, target_var.data):
                 count_per_class[orig_class] = count_per_class[orig_class] + 1
-                correct_per_class[orig_class] = correct_per_class[orig_class] + (label == pred)           
+                correct_per_class[orig_class] = correct_per_class[orig_class] + (label == pred).item()           
         else:         
             # predict
             _, preds = torch.max(cls_scores.data, 1) 
@@ -101,7 +101,7 @@ def evaluate_model(dataloader, model, encoder, weights=None):
             # update per class metrics
             for label, pred in zip(targets, preds):
                 count_per_class[label] = count_per_class[label] + 1
-                correct_per_class[label] = correct_per_class[label] + (label == pred)   
+                correct_per_class[label] = correct_per_class[label] + (label == pred).item()   
 
         # update aggregate metrics 
         running_corrects += torch.sum(preds == targets).item()
