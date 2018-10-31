@@ -179,5 +179,12 @@ if __name__ == "__main__":
 
 # Train Set Size: 15438
 # Validation Set Size: 6282
-# Training complete in 37m 21s
+# Training complete in 37m 2s
 # Best val Acc: 0.240847
+
+# Baseline
+
+# Train Set Size: 15438
+# Validation Set Size: 6282
+# Training complete in 37m 1s
+# Best val Acc: 0.324737

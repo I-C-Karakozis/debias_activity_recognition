@@ -84,7 +84,7 @@ def evaluate_model(dataloader, model, encoder, weights=None):
 
             if args.no_domain:
                 _, activity_gender_preds = torch.max(cls_scores, 1)
-            elif args.domain_fusion
+            elif args.domain_fusion:
                 cls_scores = aggregate_scores_per_verb(cls_scores, encoder)
                 _, activity_gender_preds = torch.max(cls_scores, 1) 
             else:
@@ -120,18 +120,21 @@ def evaluate_model(dataloader, model, encoder, weights=None):
     print('Accuracy: {:4f}'.format(accuracy))
 
     # compute mean value accuracy
+    # TODO: fix for baseline evaluation
     mean_per_class_acc = 0
     for verb in encoder.verbs:
         mean_gender_acc = 0
+        scale = len(encoder.genders)
         for gender in encoder.genders:
             label = encoder.encode_verb_noun(verb, gender)
             if count_per_class[label] > 0:                    
                 mean_gender_acc += correct_per_class[label] / float(count_per_class[label])
             else:
                 print(encoder.decode(label))
-        mean_per_class_acc += mean_gender_acc / len(encoder.genders)
+                scale = scale - 1
+        if scale > 0: mean_per_class_acc += mean_gender_acc / scale
     mean_per_class_acc = mean_per_class_acc / len(encoder.verbs)
-    print('Mean Value Accuracy: {:4f}'.format(mean_per_class_acc))
+    print('Mean per Class Accuracy: {:4f}'.format(mean_per_class_acc))
 
     # # plot accuracy per activity
     # accuracies_per_class = []
