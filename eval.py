@@ -33,7 +33,7 @@ def weigh_scores(scores, weights, encoder):
     for sample_scores in scores:
         sample_weighted_scores = [s / w for s,w in zip(sample_scores, weights)]
         weighted_scores.append(sample_weighted_scores)
-    return weighted_scores
+    return torch.FloatTensor(weighted_scores)
 
 def aggregate_scores_per_verb(weighted_scores, encoder):
     aggregated_weighted_scores = []
@@ -92,22 +92,27 @@ def evaluate_model(dataloader, model, encoder, weights=None):
 
             # collect activity labels and predictions
             preds = get_activity_label(activity_gender_preds, encoder)
-            targets = get_activity_label(target_var.data, encoder)  
-
-            # update per class metrics
-            for label, pred, orig_class in zip(targets, preds, target_var.data):
-                count_per_class[orig_class] = count_per_class[orig_class] + 1
-                correct_per_class[orig_class] = correct_per_class[orig_class] + (label == pred).item()           
+            targets = get_activity_label(target_var.data, encoder) 
+            verb_agent_labels = target_var.data
+           
         else:
             # standard inference
             assert(not (args.domain_fusion or args.no_domain or args.prior_shift))
             _, preds = torch.max(cls_scores.data, 1) 
-            targets = target_var.data  
+            targets = target_var.data.cpu().numpy()[0]
 
-            # update per class metrics
-            for label, pred in zip(targets, preds):
-                count_per_class[label] = count_per_class[label] + 1
-                correct_per_class[label] = correct_per_class[label] + (label == pred).item()   
+            # collect (verb, agent) labels
+            verb_agent_labels = []
+            for annot in target_var.data:
+                assert(len(annot)==2)
+                verb = annot[0]; agent = annot[1]
+                label = encoder.encode_verb_noun(encoder.decode_verb(verb), encoder.decode_noun(agent))
+                verb_agent_labels.append(label)
+
+        # update per class metrics
+        for label, pred, orig_class in zip(targets, preds, verb_agent_labels):
+            count_per_class[orig_class] = count_per_class[orig_class] + 1
+            correct_per_class[orig_class] = correct_per_class[orig_class] + (label == pred).item()  
 
         # update aggregate metrics 
         running_corrects += torch.sum(preds == targets).item()
@@ -120,7 +125,6 @@ def evaluate_model(dataloader, model, encoder, weights=None):
     print('Accuracy: {:4f}'.format(accuracy))
 
     # compute mean value accuracy
-    # TODO: fix for baseline evaluation
     mean_per_class_acc = 0
     for verb in encoder.verbs:
         mean_gender_acc = 0
@@ -152,22 +156,24 @@ def evaluate():
 
     # load dataset
     test_set = json.load(open(os.path.join("data", args.test_type+"_test.json")))
-    dataset_test = imSituSituation(args.image_dir, test_set, encoder, model.test_preprocess())
+    dataset_test = imSituSituation(args.image_dir, test_set, encoder, model.test_preprocess(), test=(not args.two_n))
     print("Test Set Size: {}".format(len(dataset_test)))
     test_loader  = torch.utils.data.DataLoader(dataset_test, batch_size=args.batch_size, shuffle=False, num_workers=3)
 
     if args.prior_shift:
-        train_set = json.load(open(os.path.join("data", args.model+"_train.json")))
+        train_set = json.load(open(os.path.join("data", "activity_balanced_train.json")))
         weights = compute_train_distribution(train_set, encoder)
         evaluate_model(test_loader, model, encoder, weights) 
     else:
         evaluate_model(test_loader, model, encoder)  
 
-# Sample execution:
+
 
 ## Baseline Standard Inference ##
 
 # CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced --model activity_balanced_baseline
+# CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced_men --model activity_balanced_baseline
+# CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced_women --model activity_balanced_baseline
 
 ## 2n Inference ##
 
