@@ -133,7 +133,7 @@ def train():
     else:
         args.prefix += "_baseline"
         encoder = imSituVerbRoleNounEncoder(train_set)
-    torch.save(encoder, os.path.join("encoders", args.prefix+"_baseline"))
+    torch.save(encoder, os.path.join("encoders", args.prefix))
 
     # load model
     model = network.load_classifier(args.weights_file, encoder, use_gpu)
@@ -181,24 +181,3 @@ if __name__ == "__main__":
 # Validation Set Size: 6282
 # Training complete in 37m 21s
 # Best val Acc: 0.240847
-
-# Skewed Model:
-
-# Train Set Size: 5848
-# Validation Set Size: 2212
-
-# Balanced Model:
-
-# Train Set Size: 5848
-# Validation Set Size: 2212
-# Training complete in 14m 21s
-# Best val Acc: 0.356691
-
-# Original Model:
-
-# Number of Verbs: 175
-# Train Set Size: 21538
-# Validation Set Size: 5934
-# Trained on 30 epochs, overfitting after ~25 epochs of training
-# Training complete in 66m 58s
-# Best val Acc: 0.346478

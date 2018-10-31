@@ -71,19 +71,24 @@ def evaluate_model(dataloader, model, encoder, weights=None):
             target_var = torch.autograd.Variable(target.cuda())
         else:
             input_var = torch.autograd.Variable(input)
-            target_var = torch.autograd.Variable(target)        
-            
+            target_var = torch.autograd.Variable(target) 
+        
         # evaluate
-        cls_scores = model(input_var)[-1]
+        cls_scores = softmax(model(input_var)[-1])       
+            
+        # predict
         if args.two_n:
-            # predict
-            cls_scores = softmax(cls_scores)
-            if args.weighted_inference: 
-                weighted_cls_scores = weigh_scores(cls_scores.data, weights, encoder)
-                aggregate_cls_scores = aggregate_scores_per_verb(weighted_cls_scores, encoder)
-                _, activity_gender_preds = torch.max(aggregate_cls_scores, 1) 
+            assert(not (args.domain_fusion and args.no_domain))
+            if args.prior_shift: 
+                cls_scores = weigh_scores(cls_scores.data, weights, encoder)
+
+            if args.no_domain:
+                _, activity_gender_preds = torch.max(cls_scores, 1)
+            elif args.domain_fusion
+                cls_scores = aggregate_scores_per_verb(cls_scores, encoder)
+                _, activity_gender_preds = torch.max(cls_scores, 1) 
             else:
-                _, activity_gender_preds = torch.max(cls_scores.data, 1)
+                exit("Prior shift requires either no_domain or domain_fusion inference.")
 
             # collect activity labels and predictions
             preds = get_activity_label(activity_gender_preds, encoder)
@@ -93,8 +98,9 @@ def evaluate_model(dataloader, model, encoder, weights=None):
             for label, pred, orig_class in zip(targets, preds, target_var.data):
                 count_per_class[orig_class] = count_per_class[orig_class] + 1
                 correct_per_class[orig_class] = correct_per_class[orig_class] + (label == pred).item()           
-        else:         
-            # predict
+        else:
+            # standard inference
+            assert(not (args.domain_fusion or args.no_domain or args.prior_shift))
             _, preds = torch.max(cls_scores.data, 1) 
             targets = target_var.data  
 
@@ -127,14 +133,13 @@ def evaluate_model(dataloader, model, encoder, weights=None):
     mean_per_class_acc = mean_per_class_acc / len(encoder.verbs)
     print('Mean Value Accuracy: {:4f}'.format(mean_per_class_acc))
 
-    if not args.two_n:
-        # plot accuracy per activity
-        accuracies_per_class = []
-        for correct, count in zip(correct_per_class, count_per_class):
-            if count > 0: accuracies_per_class.append(correct / float(count))
-            else: accuracies_per_class.append(-1)
-        plot_name = args.test_type + "_acc_per_class.png"
-        plots.plot_accuracy_per_class(accuracies_per_class, encoder, plot_name)
+    # # plot accuracy per activity
+    # accuracies_per_class = []
+    # for correct, count in zip(correct_per_class, count_per_class):
+    #     if count > 0: accuracies_per_class.append(correct / float(count))
+    #     else: accuracies_per_class.append(-1)
+    # plot_name = args.test_type + "_acc_per_class.png"
+    # plots.plot_accuracy_per_class(accuracies_per_class, encoder, plot_name)
     
 def evaluate():
     # load model
@@ -148,7 +153,7 @@ def evaluate():
     print("Test Set Size: {}".format(len(dataset_test)))
     test_loader  = torch.utils.data.DataLoader(dataset_test, batch_size=args.batch_size, shuffle=False, num_workers=3)
 
-    if args.weighted_inference:
+    if args.prior_shift:
         train_set = json.load(open(os.path.join("data", args.model+"_train.json")))
         weights = compute_train_distribution(train_set, encoder)
         evaluate_model(test_loader, model, encoder, weights) 
@@ -157,19 +162,29 @@ def evaluate():
 
 # Sample execution:
 
-# CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced --two_n --weighted_inference --model activity_balanced
-# CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced_men --two_n --weighted_inference --model activity_balanced
-# CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced_women --two_n --weighted_inference --model activity_balanced
+## Baseline Standard Inference ##
 
-# CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced --two_n --model activity_balanced
-# CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced_men --two_n --model activity_balanced
-# CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced_women --two_n --model activity_balanced
+# CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced --model activity_balanced_baseline
 
-# CUDA_VISIBLE_DEVICES=1 python eval.py balanced_fixed_gender_ratio --model balanced_fixed_gender_ratio
-# CUDA_VISIBLE_DEVICES=1 python eval.py skewed_fixed_gender_ratio --model balanced_fixed_gender_ratio
+## 2n Inference ##
 
-# CUDA_VISIBLE_DEVICES=1 python eval.py balanced_fixed_gender_ratio --model skewed_fixed_gender_ratio
-# CUDA_VISIBLE_DEVICES=1 python eval.py skewed_fixed_gender_ratio --model skewed_fixed_gender_ratio
+# CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced --two_n --no_domain --model activity_balanced_2n
+# CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced_men --two_n --no_domain --model activity_balanced_2n
+# CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced_women --two_n --no_domain --model activity_balanced_2n
+
+# CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced --two_n --domain_fusion --model activity_balanced_2n
+# CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced_men --two_n --domain_fusion --model activity_balanced_2n
+# CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced_women --two_n --domain_fusion --model activity_balanced_2n
+
+## 2n Prior Shift Inference ##
+
+# CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced --two_n --no_domain --prior_shift --model activity_balanced_2n
+# CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced_men --two_n --no_domain --prior_shift --model activity_balanced_2n
+# CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced_women --two_n --no_domain --prior_shift --model activity_balanced_2n
+
+# CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced --two_n --domain_fusion --prior_shift --model activity_balanced_2n
+# CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced_men --two_n --domain_fusion --prior_shift --model activity_balanced_2n
+# CUDA_VISIBLE_DEVICES=1 python eval.py activity_balanced_women --two_n --domain_fusion --prior_shift --model activity_balanced_2n
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Test action recognition network.") 
@@ -178,19 +193,9 @@ if __name__ == "__main__":
     parser.add_argument("--model", help="the model to start from")
     parser.add_argument("--batch_size", default=64, help="batch size for training", type=int)
     parser.add_argument("--two_n", action='store_true', default=False, help="set for model trained on 2n classification")
-    parser.add_argument("--weighted_inference", action='store_true', default=False, help="set to True to evaluate with prior weighted_inference")
+    parser.add_argument("--no_domain", action='store_true', default=False, help="set to True to evaluate with no domain")
+    parser.add_argument("--domain_fusion", action='store_true', default=False, help="set to True to evaluate with domain_fusion")   
+    parser.add_argument("--prior_shift", action='store_true', default=False, help="set to True to evaluate with prior shift")
     args = parser.parse_args()        
 
     evaluate()
-
-# Skewed Test Set Size: 5886
-# Orig Accuracy: 0.341148
-
-# Balanced Test Set Size: 2220
-# Orig Accuracy: 0.310360
-# Balanced Accuracy: 0.354505
-# Skewed Accuracy: 0.346847
-
-# Skewed Test Set Size: 3005
-# Balanced Accuracy: 0.358735
-# Skewed Accuracy: 0.368386
